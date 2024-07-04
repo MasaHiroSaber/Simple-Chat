@@ -1,5 +1,4 @@
 import sqlite3
-import os
 
 class Database:
     def __init__(self, db_path="../Data/chat_app.db"):
