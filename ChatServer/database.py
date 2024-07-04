@@ -1,7 +1,11 @@
+import os
 import sqlite3
 
+DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), f'Data\\chat_app.db')
+# print('DATABASE_PATH:', DATABASE_PATH)
+
 class Database:
-    def __init__(self, db_path="../Data/chat_app.db"):
+    def __init__(self, db_path=DATABASE_PATH):
         self.conn = sqlite3.connect(db_path)
         self.create_tables()
 
@@ -31,7 +35,7 @@ class Database:
                     receiver_id INTEGER,
                     message TEXT,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    type TEXT CHECK(type IN ('text', 'file', 'image', 'gif', 'emoji')),
+                    type TEXT CHECK(type IN ('text', 'file', 'images', 'gif', 'emoji')),
                     FOREIGN KEY (sender_id) REFERENCES users(id),
                     FOREIGN KEY (receiver_id) REFERENCES users(id)
                 )

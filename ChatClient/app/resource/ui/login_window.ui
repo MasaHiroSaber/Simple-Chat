@@ -41,7 +41,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="../resource.qrc">:/image/background.jpg</pixmap>
+      <pixmap resource="../resource.qrc">:/images/background.jpg</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -129,7 +129,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap>:/images/logo.png</pixmap>
+         <pixmap resource="../resource.qrc">:/images/logo.png</pixmap>
         </property>
         <property name="scaledContents">
          <bool>true</bool>
@@ -170,7 +170,7 @@
        </widget>
       </item>
       <item>
-       <widget class="LineEdit" name="lineEdit_3">
+       <widget class="LineEdit" name="username_lineEdit">
         <property name="placeholderText">
          <string>example</string>
         </property>
@@ -187,7 +187,7 @@
        </widget>
       </item>
       <item>
-       <widget class="LineEdit" name="lineEdit_4">
+       <widget class="LineEdit" name="password_lineEdit">
         <property name="echoMode">
          <enum>QLineEdit::Password</enum>
         </property>
@@ -216,7 +216,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="CheckBox" name="checkBox">
+       <widget class="CheckBox" name="remeberpw_checkBox">
         <property name="text">
          <string>记住密码</string>
         </property>
@@ -242,7 +242,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="PrimaryPushButton" name="pushButton">
+       <widget class="PrimaryPushButton" name="login_button">
         <property name="text">
          <string>登录</string>
         </property>
@@ -265,7 +265,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="HyperlinkButton" name="pushButton_2">
+       <widget class="HyperlinkButton" name="register_button">
         <property name="text">
          <string>没有账户？点击注册</string>
         </property>
