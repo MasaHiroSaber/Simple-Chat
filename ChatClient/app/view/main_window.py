@@ -9,13 +9,15 @@ from qfluentwidgets import (NavigationAvatarWidget, NavigationItemPosition, Mess
 from qfluentwidgets import FluentIcon as FIF
 from ChatClient.app.common.signal_bus import signalBus
 
+from ChatClient.app.view.home_interface import HomeInterface
+
 
 class MainWindow(FluentWindow):
-    def __init__(self, client):
+    def __init__(self):
         super().__init__()
         self.initWindow()
 
-        self.homeInterface = None
+        self.homeInterface = HomeInterface(self)
 
         self.navigationInterface.setAcrylicEnabled(True)
         self.connectSignalToSlot()
@@ -28,7 +30,7 @@ class MainWindow(FluentWindow):
         # signalBus.switchToSampleCard.connect(self.switchToFuntion)
 
     def initNavigation(self):
-        # self.addSubInterface(self.homeInterface, FIF.HOME, self.tr('Home'))
+        self.addSubInterface(self.homeInterface, FIF.HOME, self.tr('Home'))
         self.navigationInterface.addSeparator()
 
         pos = NavigationItemPosition.SCROLL
@@ -66,6 +68,8 @@ class MainWindow(FluentWindow):
     #         if w.objectName() == routeKey:
     #             self.stackedWidget.setCurrentWidget(w, False)
     #             w.scrollToCard(index)
+    
+    
 
 
 if __name__ == '__main__':

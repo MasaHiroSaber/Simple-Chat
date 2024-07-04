@@ -2,13 +2,11 @@ import asyncio
 import sys
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
-from PyQt5.QtWidgets import QApplication, QMessageBox
-from qfluentwidgets import InfoBar
+from PyQt5.QtWidgets import QApplication
 
 from ChatClient.app.common.user_handler import UserHandler
 from ChatClient.app.view.main_window import MainWindow
 from app.ui.login_ui import LoginWindow
-from ChatClient.app.common.info_bar import info_bar
 
 
 def handleSignal(message):
@@ -36,7 +34,6 @@ class ChatClient(QObject):
 
         except Exception as e:
             print(f"Failed to connect: {e}")
-            QMessageBox.critical(None, "Connection Error", f"Failed to connect to the server: {e}")
 
     def run(self):
         asyncio.run_coroutine_threadsafe(self.connect(), self.loop)
@@ -74,7 +71,7 @@ if __name__ == '__main__':
 
 
     def onLoginSuccess():
-        main_window = MainWindow(client)
+        main_window = MainWindow()
         main_window.show()
         login_window.close()
 
