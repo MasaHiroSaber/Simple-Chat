@@ -1,12 +1,13 @@
 import asyncio
 import sys
+import threading
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
 
 from ChatClient.app.common.user_handler import UserHandler
 from ChatClient.app.view.main_window import MainWindow
-from app.ui.login_ui import LoginWindow
+from app.ui.login_window_show import LoginWindow
 
 
 def handleSignal(message):
@@ -27,6 +28,7 @@ class ChatClient(QObject):
 
     async def connect(self):
         try:
+            print(f"当前线程:{threading.current_thread()}")
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
             self.user_handler = UserHandler(self.reader, self.writer)
             self.connection_established.emit('Connection established')
@@ -68,10 +70,10 @@ if __name__ == '__main__':
     client.connection_established.connect(login_window.on_connection_established)
 
     client.run()
-
+    
 
     def onLoginSuccess(username):
-        main_window = MainWindow(username)
+        main_window = MainWindow(client, username)
         main_window.show()
 
         main_window.setMicaEffectEnabled(True)

@@ -47,6 +47,24 @@ class UserHandler:
         response = await self.receive_response()
         return response
 
+    async def get_all_users(self, username):
+        request = {
+            'type': 'get_all_users',
+            'username': username
+        }
+        await self.send_request(request)
+        response = await self.receive_response()
+        return response
+
+    async def get_user_friends(self, username):
+        request = {
+            'type': 'get_user_friends',
+            'username': username
+        }
+        await self.send_request(request)
+        response = await self.receive_response()
+        return response
+
     async def send_request(self, request):
         self.writer.write(json.dumps(request).encode('utf-8'))
         print('send a request: {}'.format(json.dumps(request).encode('utf-8')))

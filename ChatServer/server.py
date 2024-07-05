@@ -18,52 +18,55 @@ class ChatServer:
         while True:
             await writer.drain()
             data = await reader.read(1024)
-            
+
             if not data:
                 print('script client disconnected')
-                writer.close() # 关闭套接字
-                await writer.wait_closed() # 等待套接字完全关闭
+                writer.close()  # 关闭套接字
+                await writer.wait_closed()  # 等待套接字完全关闭
                 return
             logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
             logging.info(f"data: {data}")
             message = data.decode('utf-8')
             addr = writer.get_extra_info('peername')
-    
+
             logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
             logging.info(f"Received {message} from {addr}")
-    
+
             response = self.process_message(message)
             writer.write(response.encode('utf-8'))
             await writer.drain()
-    
+
             logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
             logging.info(f"Send: {response}")
-        
-
 
     def process_message(self, message):
-        # Here you will process the message
-        # This is just an example
         message_data = json.loads(message)
-        if message_data['type'] == 'register':
-            print('register')
-            success, response = self.user_manager.register_user(
-                message_data['username'], message_data['password'])
-        elif message_data['type'] == 'login':
-            success, response = self.user_manager.login_user(
-                message_data['username'], message_data['password'])
-        elif message_data['type'] == 'update_avatar':
-            success, response = self.user_manager.update_avatar(
-                message_data['username'], message_data['avatar_path'])
-        elif message_data['type'] == 'send_message':
-            success, response = self.chat_manager.send_message(
-                message_data['sender_id'], message_data['receiver_id'],
-                message_data['message'], message_data['msg_type'])
-        elif message_data['type'] == 'connect':
-            success = True
-            response = 'connect success'
-        else:
-            success, response = False, "Unknown message type"
+        message_type = message_data.get('type')
+        match message_type:
+            case 'register':
+                success, response = self.user_manager.register_user(
+                    message_data['username'], message_data['password'])
+            case 'login':
+                success, response = self.user_manager.login_user(
+                    message_data['username'], message_data['password'])
+            case 'update_avatar':
+                success, response = self.user_manager.update_avatar(
+                    message_data['username'], message_data['avatar_path'])
+            case 'get_user_friends':
+                success, response = self.user_manager.get_user_friends(
+                    message_data['username'])
+            case 'get_all_users':
+                success, response = self.user_manager.get_all_users(
+                    message_data['username'])
+            case 'send_message':
+                success, response = self.chat_manager.send_message(
+                    message_data['sender_id'], message_data['receiver_id'],
+                    message_data['message'], message_data['msg_type'])
+            case 'connect':
+                success = True
+                response = 'connect success'
+            case _:
+                success, response = False, "Unknown message type"
 
         return json.dumps({'success': success, 'response': response})
 

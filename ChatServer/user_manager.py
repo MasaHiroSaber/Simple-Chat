@@ -1,3 +1,5 @@
+import logging
+
 from database import Database
 import sqlite3
 
@@ -30,3 +32,24 @@ class UserManager:
             UPDATE users SET avatar = ? WHERE username = ?
         ''', (avatar_path, username))
         return True, "Avatar updated successfully"
+
+    def get_user_friends(self, username):
+        query = '''
+            SELECT u2.username, u2.avatar
+            FROM users u1
+            JOIN friends f ON u1.id = f.user_id
+            JOIN users u2 ON f.friend_id = u2.id
+            WHERE u1.username = ?
+        '''
+        result = self.db.execute_query(query, (username,))
+        return True, result
+
+    def get_all_users(self, username):
+        query = '''
+            SELECT id, username
+            FROM users 
+            WHERE username != ?
+            ORDER BY id
+        '''
+        result = self.db.execute_query(query, (username,))
+        return True, result

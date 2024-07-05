@@ -14,13 +14,14 @@ from ChatClient.app.view.friend_interface import FriendInterface
 
 
 class MainWindow(FluentWindow):
-    def __init__(self, username=None):
+    def __init__(self, client, username=None):
         super().__init__()
-        self.initWindow()
 
+        self.initWindow()
+        self.client = client
         self.username = username
         self.homeInterface = HomeInterface(self, self.username)
-        self.friendInterface = FriendInterface(self, self.username)
+        self.friendInterface = FriendInterface(self.client, self, self.username)
 
         self.navigationInterface.setAcrylicEnabled(True)
         # self.connectSignalToSlot()

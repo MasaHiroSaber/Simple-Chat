@@ -1,0 +1,42 @@
+FriendInterface, #view {
+    background-color: transparent;
+}
+
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+
+TitleLabel,
+StrongBodyLabel {
+    color: black;
+}
+
+
+Friend {
+    background-color: transparent;
+}
+
+Friend > #card {
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.024);
+}
+
+Friend > #card QLabel {
+    font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
+    color: black;
+}
+
+Friend> #card InfoBadge {
+    font-size: 11px;
+}
+
+
+#sourceWidget {
+    background-color: rgba(255, 255, 255, 0.667);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
