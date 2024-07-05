@@ -40,7 +40,19 @@ class Database:
                     FOREIGN KEY (receiver_id) REFERENCES users(id)
                 )
             ''')
-
+            self.conn.execute('''
+                CREATE TABLE IF NOT EXISTS friend_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sender_id INTEGER,
+                    receiver_id INTEGER,
+                    status TEXT DEFAULT 'pending',
+                    timestamp DATETIME DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')),
+                    FOREIGN KEY (sender_id) REFERENCES users(id),
+                    FOREIGN KEY (receiver_id) REFERENCES users(id),
+                    UNIQUE(sender_id, receiver_id)
+                )
+            ''')
+    
     def execute_query(self, query, params=()):
         with self.conn:
             cur = self.conn.execute(query, params)

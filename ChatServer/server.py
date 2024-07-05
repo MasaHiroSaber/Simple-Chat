@@ -25,7 +25,6 @@ class ChatServer:
                 await writer.wait_closed()  # 等待套接字完全关闭
                 return
             logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-            logging.info(f"data: {data}")
             message = data.decode('utf-8')
             addr = writer.get_extra_info('peername')
 
@@ -57,6 +56,15 @@ class ChatServer:
                     message_data['username'])
             case 'get_all_users':
                 success, response = self.user_manager.get_all_users(
+                    message_data['username'])
+            case 'send_friend_request':
+                success, response = self.user_manager.send_friend_request(
+                    message_data['sender_username'], message_data['receiver_username'])
+            case 'respond_friend_request':
+                success, response = self.user_manager.respond_friend_request(
+                    message_data['request_id'], message_data['response'])
+            case 'get_friend_requests':
+                success, response = self.user_manager.get_friend_requests(
                     message_data['username'])
             case 'send_message':
                 success, response = self.chat_manager.send_message(

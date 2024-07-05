@@ -3,14 +3,17 @@ import logging
 import threading
 
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QPainter, QPen, QColor, QIcon, QDesktopServices
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QScrollArea, QFrame, QHBoxLayout, QToolButton, QCompleter
+from PyQt5.QtGui import QPainter, QPen, QColor, QIcon, QDesktopServices, QPixmap
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QScrollArea, QFrame, QHBoxLayout, QToolButton, \
+    QCompleter, QPushButton
 from qfluentwidgets import ScrollArea, SearchLineEdit, isDarkTheme, PushButton, BodyLabel, StrongBodyLabel, IconWidget, \
-    FluentIcon, AvatarWidget, InfoBar
+    FluentIcon, AvatarWidget, InfoBar, ToolButton, InfoBadge, InfoBadgePosition, DotInfoBadge, InfoBarPosition
 from ChatClient.app.resource import resource_rc
 from ChatClient.app.common.style_sheet import StyleSheet
+from ChatClient.app.ui.friend_requests_show import FriendRequestWindow
 from ChatClient.app.ui.user_detail_show import UserDetailWindow
 from ChatClient.app.common.info_bar import info_bar
+from qfluentwidgets import FluentIcon as FIF
 
 
 class Friend(QWidget):
@@ -24,7 +27,7 @@ class Friend(QWidget):
         self.card = QFrame(self)
 
         self.sourceWidget = QFrame(self.card)
-        self.linkIcon = IconWidget(FluentIcon.LINK, self.sourceWidget)
+        self.chatLcon = IconWidget(FluentIcon.CHAT, self.sourceWidget)
 
         self.vBoxLayout = QVBoxLayout(self)
         self.cardLayout = QVBoxLayout(self.card)
@@ -34,7 +37,7 @@ class Friend(QWidget):
         self.__initWidget()
 
     def __initWidget(self):
-        self.linkIcon.setFixedSize(16, 16)
+        self.chatLcon.setFixedSize(16, 16)
         self.__initLayout()
 
         self.sourceWidget.setCursor(Qt.PointingHandCursor)
@@ -71,11 +74,14 @@ class Friend(QWidget):
 
         self.bottomLayout.addWidget(self.widget_username, 0, Qt.AlignTop)
         self.bottomLayout.addStretch(1)
-        self.bottomLayout.addWidget(self.linkIcon, 0, Qt.AlignRight)
+        self.bottomLayout.addWidget(self.chatLcon, 0, Qt.AlignRight)
         self.bottomLayout.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
 
 class FriendInterface(ScrollArea):
+    on_send_friend_request = pyqtSignal(bool)
+    on_respond_friend_request = pyqtSignal(list)
+    on_get_friend_request = pyqtSignal(list)
     on_get_user_friends = pyqtSignal(list)
     on_get_all_users = pyqtSignal(list)
 
@@ -85,13 +91,15 @@ class FriendInterface(ScrollArea):
         self.username = username
         self.friends = None
         self.users = None
+        self.friendRequest = None
 
         self.view = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self.view)
 
         self.on_get_user_friends.connect(self.updateFriends)
         self.on_get_all_users.connect(self.updateUsers)
-        
+        self.on_get_friend_request.connect(self.getRequests)
+        self.on_send_friend_request.connect(self.addFriendSuccess)
 
         self.asyncFunctions()
         self.__initWidgets()
@@ -112,22 +120,53 @@ class FriendInterface(ScrollArea):
         self.userSearchEdit = SearchLineEdit(self)
         self.userSearchEdit.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.userSearchEdit.setPlaceholderText("查询用户")
-        self.userSearchEdit.searchSignal.connect(self.openUserDetails)
+        self.userSearchEdit.setFixedWidth(200)
+        self.userSearchEdit.searchSignal.connect(self.openUserDetailsWindow)
 
-        self.vBoxLayout.setSpacing(30)
+        self.friendRequestButton = ToolButton(self)
+        self.friendRequestButton.setIcon(FIF.SEND)
+        self.friendRequestButton.clicked.connect(self.openFriendRequestWindow)
+
+        self.refreshButton = ToolButton(self)
+        self.refreshButton.setIcon(FIF.SYNC)
+        self.refreshButton.clicked.connect(self.asyncFunctions)
+
+        self.topHBoxLayout = QHBoxLayout()
+        self.topHBoxLayout.setSpacing(10)
+        self.topHBoxLayout.setAlignment(Qt.AlignLeft)
+
+        self.midHBoxLayout = QHBoxLayout()
+
+        self.bottomVBoxLayout = QVBoxLayout()
+
+        self.title = StrongBodyLabel(self)
+        self.title.setText('您的好友')
+        self.title.setStyleSheet('font-size: 20px')
+
+        self.vBoxLayout.setSpacing(20)
         self.vBoxLayout.setAlignment(Qt.AlignTop)
         self.vBoxLayout.setContentsMargins(36, 20, 36, 36)
-        self.vBoxLayout.addWidget(self.userSearchEdit)
+        self.vBoxLayout.addLayout(self.topHBoxLayout)
+        self.vBoxLayout.addLayout(self.midHBoxLayout)
+        self.vBoxLayout.addLayout(self.bottomVBoxLayout)
+        self.topHBoxLayout.addWidget(self.userSearchEdit, 0, Qt.AlignLeft)
+        self.topHBoxLayout.addWidget(self.friendRequestButton, 0, Qt.AlignLeft)
+        self.topHBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignLeft)
+        self.midHBoxLayout.addWidget(self.title, 0, Qt.AlignLeft)
 
         StyleSheet.FRIEND_INTERFACE.apply(self)
 
     def addCurrentFriend(self, widget_username, widget_avatar, stretch=0):
         card = Friend(widget_username, widget_avatar, stretch, self.view)
-        self.vBoxLayout.addWidget(card, 0, Qt.AlignTop)
+        self.bottomVBoxLayout.addWidget(card, 0, Qt.AlignTop)
         return card
 
-    def resizeEvent(self, e):
-        super().resizeEvent(e)
+    # 刷新好友申请徽章
+    def refreshBadge(self, num):
+        if (num > 0):
+            self.infoBadge = DotInfoBadge.success(self, self.friendRequestButton, position=InfoBadgePosition.TOP_RIGHT)
+        else:
+            self.infoBadge = None
 
     def refreshUsers(self):
         stand = []
@@ -140,20 +179,39 @@ class FriendInterface(ScrollArea):
 
         self.userSearchEdit.setCompleter(completer)
 
+    # 刷新好友组件
     def refreshFriendsWidget(self):
+        item_list = list(range(self.bottomVBoxLayout.count()))
+        item_list.reverse()
+
+        for i in item_list:
+            item = self.bottomVBoxLayout.itemAt(i)
+            if item.widget():
+                item.widget().deleteLater()
+
         for friend in self.friends:
-            avatarWidget = AvatarWidget()
-            avatarWidget.setFixedSize(50, 50)
+            avatarWidget = AvatarWidget(':/images/mhs.jpg')
+            # avatarWidget.setPixmap(QPixmap(':/images/mhs.jpg'))
+            avatarWidget.setRadius(32)
+            userName = StrongBodyLabel()
+            userName.setText(str(friend[0]))
+            userName.setStyleSheet('font-size: 16px;')
             self.addCurrentFriend(
-                StrongBodyLabel(friend[0]),
+                userName,
                 avatarWidget,
             )
 
+    # 执行异步函数
     async def asyncTask(self):
         task1 = asyncio.create_task(self.getAllUsers(self.username))
         await task1
         task2 = asyncio.create_task(self.getUserFriends(self.username))
         await task2
+        task3 = asyncio.create_task(self.getFriendRequests(self.username))
+        await task3
+
+    async def delay(self, time):
+        await asyncio.sleep(time)
 
     async def getAllUsers(self, username):
         response = await self.client.user_handler.get_all_users(username)
@@ -169,16 +227,71 @@ class FriendInterface(ScrollArea):
         else:
             pass
 
-    def openUserDetails(self, username):
-        stand = []
-        for user in self.users:
-            stand.append(user[1])
-        if username in stand:
+    # 获取数据库中的好友申请
+    async def getFriendRequests(self, username):
+        response = await self.client.user_handler.get_friend_requests(username)
+        if response['success']:
+            self.on_get_friend_request.emit(response['response'])
+        else:
             pass
-            userDetails = UserDetailWindow()
-            userDetails.show()
+
+    # 发送好友申请
+    async def sendFriendRequest(self, sender_username, receiver_username):
+        response = await self.client.user_handler.send_friend_request(sender_username, receiver_username)
+        self.on_send_friend_request.emit(response['success'])
+
+    # 回应好友申请
+    async def respondFriendRequest(self, request_id, response):
+        response = await self.client.user_handler.respond_friend_request(request_id, response)
+        if response['success']:
+            self.on_respond_friend_request.emit(response['response'])
+        else:
+            pass
+
+    # 打开用户详情
+    def openUserDetailsWindow(self, selectUserName):
+        userList = []
+        friendList = []
+        for user in self.users:
+            userList.append(user[1])
+        for friend in self.friends:
+            friendList.append(friend[0])
+        if selectUserName in userList:
+            self.userDetails = UserDetailWindow(selectUserName)
+            self.userDetails.username_label.setText(selectUserName)
+            self.userDetails.function_button.setChecked(True)
+            self.userDetails.function_button.setCheckable(False)
+            self.userDetails.avatar_image.setPixmap(QPixmap(':/images/mhs.jpg'))
+            self.userDetails.avatar_image.setFixedSize(96, 96)
+            if selectUserName in friendList:
+                self.userDetails.function_button.setText('发送消息')
+                self.userDetails.sendMessage = True
+            else:
+                self.userDetails.function_button.setText('添加好友')
+                self.userDetails.addFriend = True
+            self.userDetails.show()
+
+            self.userDetails.on_add_friend.connect(self.onSendFriendRequest)
+            # userDetails.on_send_message.connect(self.onSendMessage)
         else:
             info_bar(InfoBar.error, self, '错误', '该用户不存在')
+
+    # 打开好友申请列表
+    def openFriendRequestWindow(self):
+        friendRequestWindow = FriendRequestWindow(self.friendRequest)
+        friendRequestWindow.show()
+
+        friendRequestWindow.on_reject_request.connect(self.respondRequest)
+        friendRequestWindow.on_accept_request.connect(self.respondRequest)
+        friendRequestWindow.on_window_close.connect(self.friendRequestsWindowClose)
+
+    # async def asyncRespondRequest(self, request_id, response):
+    #     await asyncio.gather(self.asyncTask(), self.respondFriendRequest(request_id, response))
+
+    @pyqtSlot(list)
+    def updateUsers(self, users):
+        self.users = users
+        self.refreshUsers()
 
     @pyqtSlot(list)
     def updateFriends(self, friends):
@@ -186,6 +299,26 @@ class FriendInterface(ScrollArea):
         self.refreshFriendsWidget()
 
     @pyqtSlot(list)
-    def updateUsers(self, users):
-        self.users = users
-        self.refreshUsers()
+    def getRequests(self, request):
+        self.friendRequest = request
+        self.refreshBadge(len(self.friendRequest))
+
+    @pyqtSlot(str, str)
+    def respondRequest(self, request_id, response):
+        asyncio.run_coroutine_threadsafe(self.respondFriendRequest(request_id, response), self.client.loop)
+
+    @pyqtSlot(str)
+    def onSendFriendRequest(self, receiver_username):
+        sender_username = self.username
+        asyncio.run_coroutine_threadsafe(self.sendFriendRequest(sender_username, receiver_username), self.client.loop)
+
+    @pyqtSlot(bool)
+    def addFriendSuccess(self, isSuccess):
+        if isSuccess:
+            info_bar(InfoBar.success, self.userDetails, '成功', '好友申请已发送', position=InfoBarPosition.TOP)
+        else:
+            info_bar(InfoBar.warning, self.userDetails,'警告','你已经发送过好友请求了', position=InfoBarPosition.TOP)
+
+    @pyqtSlot()
+    def friendRequestsWindowClose(self):
+        self.asyncFunctions()

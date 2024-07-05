@@ -26,7 +26,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
         self.titleBar.raise_()
 
         self.label.setScaledContents(False)
-        self.setWindowTitle('PyQt-Fluent-Widget')
+        self.setWindowTitle('Login')
         self.setWindowIcon(QIcon(":/images/logo.png"))
         self.resize(1000, 650)
 
