@@ -12,7 +12,7 @@ from ChatClient.app.common.info_bar import info_bar
 
 
 class LoginWindow(AcrylicWindow, Ui_Form):
-    login_success = pyqtSignal()
+    login_success = pyqtSignal(str)
     show_error = pyqtSignal(str, str)
     show_success = pyqtSignal(str, str)
 
@@ -80,7 +80,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
     async def login(self, username, password):
         response = await self.client.user_handler.login(username, password)
         if response['success']:
-            self.login_success.emit()
+            self.login_success.emit(str(username))
             self.show_success.emit('成功', '登录成功！')
         else:
             self.show_error.emit('错误', '您输入的用户名或密码有误！')
@@ -97,7 +97,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
     async def register(self, username, password):
         response = await self.client.user_handler.register(username, password)
         if response['success']:
-            self.login_success.emit()
+            self.login_success.emit(str(username))
             self.show_success.emit('成功', '注册成功！')
         else:
             self.show_error.emit('错误', '您输入的用户名已被注册！')
@@ -115,3 +115,7 @@ class LoginWindow(AcrylicWindow, Ui_Form):
     @pyqtSlot(str, str)
     def show_success_message(self, title, message):
         info_bar(InfoBar.success, self, title, message)
+        
+    @pyqtSlot(str)
+    def get_username_message(self, username):
+        return username

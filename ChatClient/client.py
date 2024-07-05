@@ -70,13 +70,15 @@ if __name__ == '__main__':
     client.run()
 
 
-    def onLoginSuccess():
-        main_window = MainWindow()
+    def onLoginSuccess(username):
+        main_window = MainWindow(username)
         main_window.show()
+
+        main_window.setMicaEffectEnabled(True)
+
         login_window.close()
 
 
     login_window.login_success.connect(onLoginSuccess)
 
     app.exec_()
-

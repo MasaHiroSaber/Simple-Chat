@@ -1,5 +1,7 @@
 <RCC>
   <qresource>
+    <file>images/mhs.jpg</file>
+    <file>images/header1.png</file>
     <file>images/background.jpg</file>
     <file>images/logo.png</file>
   </qresource>

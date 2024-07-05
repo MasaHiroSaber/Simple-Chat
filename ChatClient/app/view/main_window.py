@@ -10,30 +10,34 @@ from qfluentwidgets import FluentIcon as FIF
 from ChatClient.app.common.signal_bus import signalBus
 
 from ChatClient.app.view.home_interface import HomeInterface
+from ChatClient.app.view.friend_interface import FriendInterface
 
 
 class MainWindow(FluentWindow):
-    def __init__(self):
+    def __init__(self, username=None):
         super().__init__()
         self.initWindow()
 
-        self.homeInterface = HomeInterface(self)
+        self.username = username
+        self.homeInterface = HomeInterface(self, self.username)
+        self.friendInterface = FriendInterface(self, self.username)
 
         self.navigationInterface.setAcrylicEnabled(True)
-        self.connectSignalToSlot()
+        # self.connectSignalToSlot()
 
         self.initNavigation()
         self.splashScreen.finish()
 
-    def connectSignalToSlot(self):
-        signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
-        # signalBus.switchToSampleCard.connect(self.switchToFuntion)
+    # def connectSignalToSlot(self):
+    #     signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
+    # signalBus.switchToSampleCard.connect(self.switchToFuntion)
 
     def initNavigation(self):
-        self.addSubInterface(self.homeInterface, FIF.HOME, self.tr('Home'))
+        self.addSubInterface(self.homeInterface, FIF.HOME, self.tr('主页'))
         self.navigationInterface.addSeparator()
 
         pos = NavigationItemPosition.SCROLL
+        self.addSubInterface(self.friendInterface, FIF.ROBOT, self.tr('好友'))
         # self.addSubInterface()
 
         # self.addSubInterface()
@@ -46,6 +50,8 @@ class MainWindow(FluentWindow):
         self.setWindowTitle('Simple-Chat')
 
         self.setMicaEffectEnabled(True)
+        if self.setMicaEffectEnabled(True):
+            print(True)
 
         self.splashScreen = SplashScreen(self.windowIcon(), self)
         self.splashScreen.setIconSize(QSize(100, 100))
@@ -68,8 +74,6 @@ class MainWindow(FluentWindow):
     #         if w.objectName() == routeKey:
     #             self.stackedWidget.setCurrentWidget(w, False)
     #             w.scrollToCard(index)
-    
-    
 
 
 if __name__ == '__main__':
