@@ -11,6 +11,7 @@ from ChatClient.app.common.signal_bus import signalBus
 
 from ChatClient.app.view.home_interface import HomeInterface
 from ChatClient.app.view.friend_interface import FriendInterface
+from ChatClient.app.view.chat_interface import ChatInterface
 
 
 class MainWindow(FluentWindow):
@@ -21,6 +22,7 @@ class MainWindow(FluentWindow):
         self.username = username
         self.homeInterface = HomeInterface(self, self.username)
         self.friendInterface = FriendInterface(self, self.username)
+        self.chatInterface = ChatInterface(self, self.username)
 
         self.navigationInterface.setAcrylicEnabled(True)
         # self.connectSignalToSlot()
@@ -38,7 +40,7 @@ class MainWindow(FluentWindow):
 
         pos = NavigationItemPosition.SCROLL
         self.addSubInterface(self.friendInterface, FIF.ROBOT, self.tr('好友'))
-        # self.addSubInterface()
+        self.addSubInterface(self.chatInterface, FIF.ROBOT, self.tr('聊天'))
 
         # self.addSubInterface()
 
