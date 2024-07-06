@@ -79,7 +79,7 @@ class ChatServer:
                     await writer.drain()
 
                     for chunk_index in range(total_chunks):
-                        await asyncio.sleep(0.01)
+                        await asyncio.sleep(0.02)
                         chunk_start = chunk_index * chunk_size
                         chunk_end = chunk_start + chunk_size
                         chunk = avatar_data[chunk_start:chunk_end]

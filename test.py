@@ -1,3 +1,4 @@
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QScrollArea, QHBoxLayout, QListWidgetItem, QLabel, \
     QPushButton
@@ -18,10 +19,15 @@ class ChatInterface(ScrollArea):
 
         self.__initWidgets__()
 
-    def __initWidgets__(self):
+        # 指向当前的会话，用于更新页面的
+        self.p = QWidget()
+
+        # 通过updateLeftList返回的，左侧页面人名和对应会话对象的字典
+        self.ChatSessionDict = {}
+
         # 用于初始生成右侧页面的
-        self.judge = 1
-        self.p = 0
+        self.on = 1
+    def __initWidgets__(self):
         self.view.setObjectName('view')
         self.setObjectName('chatInterface')
 
@@ -40,41 +46,16 @@ class ChatInterface(ScrollArea):
 
         # 用来更新左侧列表，并返回一个含有右侧会话的字典
         # 同时以第一个为右侧最开始的页面
-        self.ChatSessionDict, self.stands = self.updateLeftList()
+        self.ChatSessionDict = self.updateLeftList()
 
         self.leftWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        # 通过函数跟新右侧窗口,创建一个临时的Widget
-        self.updateRightWidget(list(self.ChatSessionDict.keys())[0])
-        self.judge = 0
 
-    def updateRightWidget(self, ChatSName):
-        """
-
-        :param
-        ChatSName: 传入的是对应的用户名
-        :return:
-        """
-
-        if not self.judge == 1:
-            # 更新字典里面对应的ChatSession
-            self.ChatSessionDict[self.p] = self.rightWidget
-            # 溢出目前的Widget用来更新
-            self.hBoxLayout.removeWidget(self.rightWidget)
-
-        ChatS = self.ChatSessionDict[ChatSName]
 
         self.rightWidget = ChatSession()
-        # 判断该会话有没有过这个流程
-        if self.rightWidget.ifInit == 0:
-            self.rightLayout = QVBoxLayout()
-            self.rightWidget.setLayout(self.rightLayout)
-
-            self.rightWidget.ifInit = 1
-
-        self.p = ChatSName
+        self.rightLayout = QVBoxLayout()
+        self.rightWidget.setLayout(self.rightLayout)
         self.hBoxLayout.addWidget(self.rightWidget)
-        print(self.rightWidget.name + "endif")
 
     def updateLeftList(self):
         """
@@ -99,15 +80,12 @@ class ChatInterface(ScrollArea):
         # 创建一个字典储存每一个对象的会话
         rightWidget = {}
         for i in stands:
-            self.rightWidget = ChatSession(name=i)
+            self.rightWidget = ChatSession()
             self.rightLayout = QVBoxLayout()
             self.rightWidget.setLayout(self.rightLayout)
             rightWidget[i] = self.rightWidget
 
-        return rightWidget, stands
+        return rightWidget
 
     def displayChat(self, item):
         print(f"click :{item.text()}")
-        self.updateRightWidget(str(item.text()))
-
-

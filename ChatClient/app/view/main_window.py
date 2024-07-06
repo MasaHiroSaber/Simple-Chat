@@ -11,25 +11,25 @@ from ChatClient.app.common.signal_bus import signalBus
 
 from ChatClient.app.view.home_interface import HomeInterface
 from ChatClient.app.view.friend_interface import FriendInterface
+from ChatClient.app.view.chat_interface import ChatInterface
 
 
 class MainWindow(FluentWindow):
     def __init__(self, client, username=None):
         super().__init__()
-
         self.initWindow()
+        
         self.client = client
         self.username = username
         self.homeInterface = HomeInterface(self.client, self, self.username)
         self.friendInterface = FriendInterface(self.client, self, self.username)
+        self.chatInterface = ChatInterface(self, self.username)
 
         self.navigationInterface.setAcrylicEnabled(True)
         # self.connectSignalToSlot()
 
         self.initNavigation()
         self.splashScreen.finish()
-        
-        
 
     # def connectSignalToSlot(self):
     #     signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
@@ -41,7 +41,7 @@ class MainWindow(FluentWindow):
 
         pos = NavigationItemPosition.SCROLL
         self.addSubInterface(self.friendInterface, FIF.ROBOT, self.tr('好友'))
-        # self.addSubInterface()
+        self.addSubInterface(self.chatInterface, FIF.CHAT, self.tr('聊天'))
 
         # self.addSubInterface()
 
