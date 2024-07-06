@@ -1,5 +1,6 @@
 # -- coding: utf-8 --**
 import asyncio
+import base64
 import json
 
 
@@ -7,6 +8,7 @@ class UserHandler:
     def __init__(self, reader, writer):
         self.reader = reader
         self.writer = writer
+        self.incoming_details = {}
 
     async def connect_test(self):
         request = {
@@ -16,7 +18,7 @@ class UserHandler:
         response = await self.receive_response()
         return response
 
-    async def register(self, username, password, avatar='default_avatar.png'):
+    async def register(self, username, password, avatar='default'):
         request = {
             'type': 'register',
             'username': username,
@@ -43,8 +45,37 @@ class UserHandler:
             'username': username
         }
         await self.send_request(request)
-        response = await self.receive_response()
-        return response
+        initial_response = await self.receive_response()
+
+        if initial_response['success']:
+            total_chunks = initial_response['total_chunks']
+            task = asyncio.create_task(self.receive_user_details_chunks(username, total_chunks))
+            success, avatar_data = await task
+            # success, avatar_data = asyncio.ensure_future(self.receive_user_details_chunks(username, total_chunks))
+            if success:
+                return {'success': True, 'response': {'username': username, 'avatar': avatar_data}}
+            else:
+                return {'success': False, 'response': 'NONE'}
+        else:
+            return initial_response
+        # response = await self.receive_response()
+        # return response
+
+    async def receive_user_details_chunks(self, username, total_chunks):
+        avatar_chunks = [''] * total_chunks
+        for chunk_index in range(total_chunks):
+            response = await self.receive_response()
+            if response['success']:
+                chunk = response['avatar_chunk']
+                avatar_chunks[chunk_index] = chunk
+            else:
+                print("Error receiving chunk", chunk_index)
+                return
+
+        avatar_data = ''.join(avatar_chunks)
+        # with open(f"{username}_avatar.png", 'wb') as avatar_file:
+        #     avatar_file.write(avatar_data)
+        return True, avatar_data
 
     async def update_avatar(self, username, avatarBase64):
         chunkSize = 2048
@@ -63,7 +94,7 @@ class UserHandler:
             # await asyncio.sleep(1)
             response = await self.receive_response()
             # return response
-        return True, 'Updated avatar successfully'
+        return True
 
     async def get_all_users(self, username):
         request = {

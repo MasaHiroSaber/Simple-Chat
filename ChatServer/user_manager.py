@@ -30,7 +30,7 @@ class UserManager:
     def get_user_details(self, username):
         try:
             query = '''
-                SELECT id, password, username, avatar FROM users WHERE username = ?
+                SELECT id, username, avatar FROM users WHERE username = ?
             '''
             result = self.db.execute_query(query, (username,))
 

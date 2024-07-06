@@ -30,12 +30,13 @@ class ChatServer:
             addr = writer.get_extra_info('peername')
             logging.info(f"Received {message} from {addr}")
 
-            response = await self.process_message(message)
-            writer.write(response.encode('utf-8'))
-            await writer.drain()
+            response = await self.process_message(message, writer, reader)
+            if response:
+                writer.write(response.encode('utf-8'))
+                await writer.drain()
             logging.info(f"Send: {response}")
 
-    async def process_message(self, message):
+    async def process_message(self, message, writer, reader):
         try:
             message_data = json.loads(message)
         except json.JSONDecodeError as e:
@@ -55,7 +56,7 @@ class ChatServer:
 
                 if all(self.incoming_avatars[username]):
                     avatarBase64 = ''.join(self.incoming_avatars[username])
-                    success, response =self.user_manager.update_avatar(username, avatarBase64)
+                    success, response = self.user_manager.update_avatar(username, avatarBase64)
                     del self.incoming_avatars[username]
                 else:
                     success, response = True, f"Received chunk {chunk_index + 1}/{total_chunks}"
@@ -67,8 +68,33 @@ class ChatServer:
                 success, response = self.user_manager.login_user(
                     message_data['username'], message_data['password'])
             case 'get_user_details':
-                success, response = self.user_manager.get_user_details(
-                    message_data['username'])
+                username = message_data['username']
+                user_details = self.user_manager.get_user_details(username)
+                if user_details:
+                    avatar_data = user_details[1][0][2]
+                    chunk_size = 2048
+                    total_chunks = (len(avatar_data) + chunk_size - 1) // chunk_size
+                    initial_response = json.dumps({'success': True, 'total_chunks': total_chunks})
+                    writer.write(initial_response.encode('utf-8'))
+                    await writer.drain()
+
+                    for chunk_index in range(total_chunks):
+                        await asyncio.sleep(0.01)
+                        chunk_start = chunk_index * chunk_size
+                        chunk_end = chunk_start + chunk_size
+                        chunk = avatar_data[chunk_start:chunk_end]
+                        chunk_response = {
+                            'success': True,
+                            'avatar_chunk': chunk,
+                        }
+                        logging.info(f"Send: {chunk_response}")
+                        writer.write(json.dumps(chunk_response).encode('utf-8'))
+                        await writer.drain()
+                    return
+                else:
+                    success, response = False, "User not found"
+                # success, response = self.user_manager.get_user_details(
+                #     message_data['username'])
             case 'get_user_friends':
                 success, response = self.user_manager.get_user_friends(
                     message_data['username'])

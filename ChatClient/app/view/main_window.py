@@ -28,6 +28,8 @@ class MainWindow(FluentWindow):
 
         self.initNavigation()
         self.splashScreen.finish()
+        
+        
 
     # def connectSignalToSlot(self):
     #     signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)

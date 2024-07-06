@@ -6,18 +6,20 @@ import tkinter as tk
 
 from PIL import Image
 from tkinter import filedialog
-from PyQt5.QtCore import Qt, QRectF, pyqtSignal
-from PyQt5.QtGui import QPixmap, QPainterPath, QPainter, QLinearGradient, QColor, QBrush, QFont
+
+from PyQt5.QtCore import Qt, QRectF, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QPixmap, QPainterPath, QPainter, QLinearGradient, QColor, QBrush, QFont, QImage
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
-from qfluentwidgets import ScrollArea, isDarkTheme, AvatarWidget, PillToolButton, StrongBodyLabel
+from qfluentwidgets import ScrollArea, isDarkTheme, AvatarWidget, PillToolButton, StrongBodyLabel, InfoBar
 from ChatClient.app.common.style_sheet import StyleSheet
 from qfluentwidgets import FluentIcon as FIF
+from ChatClient.app.common.info_bar import info_bar
 from ChatClient.app.resource import resource_rc
 
 
 class BannerWidget(QWidget):
 
-    def __init__(self, parent=None, username='default', avatar='default'):
+    def __init__(self, parent=None, username='default', avatar=None):
         super().__init__(parent=parent)
         self.avatarImageData = avatar
         self.setFixedHeight(336)
@@ -26,9 +28,8 @@ class BannerWidget(QWidget):
         self.banner = QPixmap(':/images/header1.png')
         self.galleryLabel.setObjectName('galleryLabel')
         self.avatarImage = AvatarWidget(self)
-        self.setAvatarImage()
-        self.avatarImage.setFixedSize(96, 96)
-        self.avatarImage.move(40, 200)
+        # self.avatarImage.setFixedSize(96, 96)
+        # self.avatarImage.move(40, 200)
 
         self.changeAvatarImage = PillToolButton(self)
         self.changeAvatarImage.setIcon(FIF.EDIT)
@@ -52,13 +53,13 @@ class BannerWidget(QWidget):
         # self.vBoxLayout.addWidget(self.avatarImage)
         self.vBoxLayout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
-    def setAvatarImage(self):
-        if self.avatarImageData == 'default':
-            print(self.avatarImageData)
-            self.avatarImage.setPixmap(QPixmap(':/images/mhs.jpg'))
-        else:
-            pass
-            # self.avatarImage.setPixmap(QPixmap(self.avatarImage))
+    # def setAvatarImage(self):
+    #     if self.avatarImageData == 'default':
+    #         print('isDefault')
+    #         self.avatarImage.setPixmap(QPixmap(':/images/mhs.jpg'))
+    #     else:
+    #         pass
+    #         # self.avatarImage.setPixmap(QPixmap(self.avatarImage))
 
     def paintEvent(self, e):
         super().paintEvent(e)
@@ -96,24 +97,26 @@ class BannerWidget(QWidget):
 
 
 class HomeInterface(ScrollArea):
-    on_get_current_user_details = pyqtSignal()
+    on_update_avatar_success = pyqtSignal(str)
 
     def __init__(self, client, parent=None, username="Unknown"):
         super().__init__(parent=parent)
         self.client = client
         self.username = username
-        self.avatar = None
+        self.avatar = 'default'
         self.userDetails = None
 
-        self.useGetCurrentUserDetails()
-
-        self.banner = BannerWidget(self, username)
+        self.banner = BannerWidget(self, self.username, self.avatar)
         self.banner.changeAvatarImage.clicked.connect(self.openChangeAvatarImageSelect)
+
+        self.on_update_avatar_success.connect(self.informationBar)
 
         self.view = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self.view)
         self.__initWidget()
         # self.loadSamples()
+
+        # self.useGetCurrentUserDetails()
 
     def __initWidget(self):
         self.view.setObjectName('view')
@@ -131,13 +134,23 @@ class HomeInterface(ScrollArea):
         self.vBoxLayout.setAlignment(Qt.AlignTop)
 
     def setAvatarImage(self):
-        if self.userDetails[0][3] == 'default':
-            self.avatar = 'default'
+        if self.userDetails['avatar'] == 'default':
+            self.banner.avatarImage.setPixmap(QPixmap(':/images/mhs.jpg'))
         else:
-            self.avatar = self.userDetails[0][3]
+            avatarData = base64.b64decode(self.userDetails['avatar'])
+
+            avatarImage = QImage()
+            avatarImage.loadFromData(avatarData)
+
+            pixmap = QPixmap.fromImage(avatarImage)
+
+            self.banner.avatarImage.setPixmap(QPixmap(pixmap))
+
+        self.banner.avatarImage.setFixedSize(96, 96)
+        self.banner.avatarImage.move(40, 200)
 
     def useGetCurrentUserDetails(self):
-        asyncio.run_coroutine_threadsafe(self.getCurrentUserDetails(self.username), self.client.loop)
+        asyncio.run_coroutine_threadsafe(self.run_tasks_sequentially(), self.client.loop)
 
     def useChangeAvatarImage(self, avatarImageData):
         asyncio.run_coroutine_threadsafe(self.changeAvatarImage(self.username, avatarImageData), self.client.loop)
@@ -149,48 +162,61 @@ class HomeInterface(ScrollArea):
 
         file_path = filedialog.askopenfilename()
 
-        with open(file_path, 'rb') as f:
-            avatarImageData = f.read()
+        if file_path:
+            with open(file_path, 'rb') as f:
+                avatarImageData = f.read()
 
-        avatarImageData = self.compress_img(avatarImageData)
-        avatarImageData = base64.b64encode(avatarImageData)
-        avatarImageData = avatarImageData.decode('utf-8')
+            avatarImageData = self.compress_and_resize_image(avatarImageData)
+            avatarImageData = base64.b64encode(avatarImageData)
+            avatarImageData = avatarImageData.decode('utf-8')
 
-        self.useChangeAvatarImage(avatarImageData)
+            self.useChangeAvatarImage(avatarImageData)
 
     # 压缩图片
-    def compress_img(self, image_content, max_size=1024 * 1024):
-        save_quality = 75
-        query_sum = 0
-        image_content = io.BytesIO(image_content)
-        image = Image.open(image_content)
-        # 转成rgb才能保存为jpeg格式，PIL无法压缩png图片
+    def compress_and_resize_image(self, image_data, max_size=1024 * 1024):
+        # 使用 PIL 打开图像
+        image = Image.open(io.BytesIO(image_data))
         image = image.convert('RGB')
-        while True:
-            img_byte_arr = io.BytesIO()
-            query_sum += 1
-            image.save(img_byte_arr, format='JPEG', quality=save_quality)
-            pic_size_bytes = img_byte_arr.tell()
-            if pic_size_bytes <= max_size:
-                break
-            save_quality -= query_sum
-            if save_quality > 0:
-                continue
-            else:
-                break
+
+        scaling_factor = 256 / max(image.height, image.width)
+
+        # 调整图像大小
+        image = image.resize((int(scaling_factor * image.width), int(scaling_factor * image.height)))
+
+        # 将调整大小后的图像保存为二进制数据
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format='JPEG', quality=50)  # 使用 JPEG 格式保存图像
         img_byte_arr = img_byte_arr.getvalue()
+
+        # 如果图像大小超过指定的最大大小，进行压缩
+        while len(img_byte_arr) > max_size:
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='JPEG', quality=25)  # 调整压缩质量
+            img_byte_arr = img_byte_arr.getvalue()
+
         return img_byte_arr
+
+    async def run_tasks_sequentially(self):
+        await self.getCurrentUserDetails(self.username)
 
     async def getCurrentUserDetails(self, username):
         response = await self.client.user_handler.get_user_details(username)
         if response['success']:
             self.userDetails = response['response']
+            self.setAvatarImage()
         else:
             pass
 
     async def changeAvatarImage(self, username, avatarImageData):
         response = await self.client.user_handler.update_avatar(username, avatarImageData)
-        if response['success']:
-            pass
+        print(response)
+        if response:
+            self.on_update_avatar_success.emit('success')
         else:
             pass
+
+    @pyqtSlot(str)
+    def informationBar(self, result):
+        if result == 'success':
+            info_bar(InfoBar.success, self, '成功', '更换头像成功')
+            self.useGetCurrentUserDetails()

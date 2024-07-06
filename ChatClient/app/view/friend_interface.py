@@ -103,7 +103,7 @@ class FriendInterface(ScrollArea):
 
         self.asyncFunctions()
         self.__initWidgets()
-
+    
     def asyncFunctions(self):
         asyncio.run_coroutine_threadsafe(self.asyncTask(), self.client.loop)
 
@@ -203,13 +203,16 @@ class FriendInterface(ScrollArea):
 
     # 执行异步函数
     async def asyncTask(self):
-        task1 = asyncio.create_task(self.getAllUsers(self.username))
+        # await asyncio.sleep(1) asyncio.create_task(self.parent().homeInterface.getCurrentUserDetails(self.username))
+        task1 = asyncio.create_task(self.parent().homeInterface.getCurrentUserDetails(self.username))
         await task1
         task2 = asyncio.create_task(self.getUserFriends(self.username))
         await task2
         task3 = asyncio.create_task(self.getFriendRequests(self.username))
         await task3
-
+        task4 = asyncio.create_task(self.getAllUsers(self.username))
+        await task4
+    
     async def delay(self, time):
         await asyncio.sleep(time)
 
