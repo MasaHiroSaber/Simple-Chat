@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), f'Data\\chat_app.db')
+DATABASE_PATH = os.path.join(os.path.dirname(__file__), f'Data\\chat_app.db')
 # print('DATABASE_PATH:', DATABASE_PATH)
 
 class Database:
@@ -65,3 +65,4 @@ class Database:
 
 if __name__ == '__main__':
     database = Database()
+
