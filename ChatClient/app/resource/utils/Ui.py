@@ -2,7 +2,8 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QLabel, QPushButton, QVBoxLayout
 from qfluentwidgets import PushButton
 
-from ChatClient.app.resource.utils.abstract.PlainTextEdit_Rewite import MyPlainTextEdit
+
+from ChatClient.app.resource.utils.RewitePlainTextEdit import RewritePlainTextEdit
 
 
 class UiCharSession(object):
@@ -45,7 +46,7 @@ class UiCharSession(object):
         # 水平布局和文本框
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.plainTextEdit = MyPlainTextEdit(self.frame)
+        self.plainTextEdit = RewritePlainTextEdit(self.frame)
         self.plainTextEdit.setStyleSheet(
             "QPlainTextEdit{\nborder-radius:20px;"
             "\nborder:3px solid #2c3e50;"
