@@ -47,7 +47,7 @@ class UserManager:
 
     def get_user_friends(self, username):
         query = '''
-            SELECT u2.username, u2.avatar
+            SELECT u2.username
             FROM users u1
             JOIN friends f ON u1.id = f.user_id
             JOIN users u2 ON f.friend_id = u2.id

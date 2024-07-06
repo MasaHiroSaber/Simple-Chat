@@ -9,10 +9,11 @@ from ChatClient.app.resource.utils.ChatSession import ChatSession
 
 class ChatInterface(ScrollArea):
 
-    def __init__(self, parent=None, username=None, avatar="def"):
+    def __init__(self, parent=None, username=None, avatar="default"):
         super().__init__(parent=parent)
         self.username = username
         self.avatar = avatar
+        self.friends = None
         self.view = QWidget(self)
         self.hBoxLayout = QHBoxLayout(self.view)
 
@@ -84,7 +85,9 @@ class ChatInterface(ScrollArea):
         :return:
         """
 
-        # 用来存贮用户民的列表
+        self.friends = self.parent().friendInterface.friends
+
+        # 用来存贮用户名的列表
         stands = [
             'Faker', 'otto', 'monikaBeiZi'
         ]
@@ -109,5 +112,3 @@ class ChatInterface(ScrollArea):
     def displayChat(self, item):
         print(f"click :{item.text()}")
         self.updateRightWidget(str(item.text()))
-
-

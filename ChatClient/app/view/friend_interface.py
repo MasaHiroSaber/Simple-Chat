@@ -1,5 +1,7 @@
 import asyncio
+import base64
 import logging
+import os
 import threading
 
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, pyqtSlot
@@ -82,8 +84,9 @@ class FriendInterface(ScrollArea):
     on_send_friend_request = pyqtSignal(bool)
     on_respond_friend_request = pyqtSignal(list)
     on_get_friend_request = pyqtSignal(list)
-    on_get_user_friends = pyqtSignal(list)
+    on_get_user_friends = pyqtSignal()
     on_get_all_users = pyqtSignal(list)
+    on_get_friend_details = pyqtSignal()
 
     def __init__(self, client, parent=None, username="None"):
         super().__init__(parent=parent)
@@ -92,6 +95,7 @@ class FriendInterface(ScrollArea):
         self.friends = None
         self.users = None
         self.friendRequest = None
+        self.friendsDetails = []
 
         self.view = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self.view)
@@ -100,10 +104,20 @@ class FriendInterface(ScrollArea):
         self.on_get_all_users.connect(self.updateUsers)
         self.on_get_friend_request.connect(self.getRequests)
         self.on_send_friend_request.connect(self.addFriendSuccess)
+        self.on_get_friend_details.connect(self.saveImage)
 
         self.asyncFunctions()
         self.__initWidgets()
-    
+
+    def useRefreshFriends(self):
+        asyncio.run_coroutine_threadsafe(self.refreshFriends(), self.client.loop)
+
+    def useGetUserFriendsDetails(self):
+        asyncio.run_coroutine_threadsafe(self.getUserFriendsDetails(), self.client.loop)
+
+    def useGetUserFriends(self):
+        asyncio.run_coroutine_threadsafe(self.getUserFriends(self.username), self.client.loop)
+
     def asyncFunctions(self):
         asyncio.run_coroutine_threadsafe(self.asyncTask(), self.client.loop)
 
@@ -129,7 +143,9 @@ class FriendInterface(ScrollArea):
 
         self.refreshButton = ToolButton(self)
         self.refreshButton.setIcon(FIF.SYNC)
-        self.refreshButton.clicked.connect(self.asyncFunctions)
+        # self.refreshButton.clicked.connect(self.useGetUserFriends)
+        self.refreshButton.clicked.connect(self.useRefreshFriends)
+        self.refreshButton.clicked.connect(self.refreshFriendsWidget)
 
         self.topHBoxLayout = QHBoxLayout()
         self.topHBoxLayout.setSpacing(10)
@@ -168,6 +184,7 @@ class FriendInterface(ScrollArea):
         else:
             self.infoBadge = None
 
+    # 刷新用户
     def refreshUsers(self):
         stand = []
         for user in self.users:
@@ -181,6 +198,7 @@ class FriendInterface(ScrollArea):
 
     # 刷新好友组件
     def refreshFriendsWidget(self):
+
         item_list = list(range(self.bottomVBoxLayout.count()))
         item_list.reverse()
 
@@ -190,7 +208,14 @@ class FriendInterface(ScrollArea):
                 item.widget().deleteLater()
 
         for friend in self.friends:
-            avatarWidget = AvatarWidget(':/images/mhs.jpg')
+            avatar_path = f"../resource/temp/{friend[0]}_avatar.jpg"
+
+            if os.path.exists(avatar_path):
+                print(f"{friend[0]} avatar is exist")
+                avatarWidget = AvatarWidget(avatar_path)
+            else:
+                print(f"{friend[0]} avatar is not exist")
+                avatarWidget = AvatarWidget(':/images/mhs.jpg')
             # avatarWidget.setPixmap(QPixmap(':/images/mhs.jpg'))
             avatarWidget.setRadius(32)
             userName = StrongBodyLabel()
@@ -200,6 +225,33 @@ class FriendInterface(ScrollArea):
                 userName,
                 avatarWidget,
             )
+
+    def checkAvatarImageExist(self, avatar_path):
+        if os.path.exists(avatar_path):
+            return True
+        else:
+            return False
+
+    # 储存图像
+    @pyqtSlot()
+    def saveImage(self):
+        data = self.friendsDetails
+        for friendDetail in data:
+            friendName = friendDetail['username']
+            if friendDetail['avatar'] != 'default':
+                friendAvatarData = base64.b64decode(friendDetail['avatar'])
+
+                save_dir = '../resource/temp'
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+
+                image_file_name = f'{friendName}_avatar.jpg'
+                image_file_path = os.path.join(save_dir, image_file_name)
+
+                with open(image_file_path, 'wb') as image_file:
+                    image_file.write(friendAvatarData)
+
+                print(f'Avatar for {friendName} saved to {image_file_path}')
 
     # 执行异步函数
     async def asyncTask(self):
@@ -212,7 +264,15 @@ class FriendInterface(ScrollArea):
         await task3
         task4 = asyncio.create_task(self.getAllUsers(self.username))
         await task4
-    
+        task5 = asyncio.create_task(self.getUserFriendsDetails())
+        await task5
+
+    async def refreshFriends(self):
+        task1 = asyncio.create_task(self.getUserFriends(self.username))
+        await task1
+        task2 = asyncio.create_task(self.getUserFriendsDetails())
+        await task2
+
     async def delay(self, time):
         await asyncio.sleep(time)
 
@@ -220,21 +280,41 @@ class FriendInterface(ScrollArea):
         response = await self.client.user_handler.get_all_users(username)
         if response['success']:
             self.on_get_all_users.emit(response['response'])
-
         else:
             pass
 
-    async def getUserDetails(self, username):
-        response = await self.client.user_handler.get_user_details(username)
-        if response['success']:
-            print(response)
-        else:
-            pass
+    # 获取当前用户好友的详情信息
+    async def getUserFriendsDetails(self):
+        # self.useGetUserFriends()
+        friendName = []
+        for friend in self.friends:
+            friendName.append(friend[0])
+        for name in friendName:
+            print(self.friends)
+            response = await self.client.user_handler.get_user_details(name)
+            if response['success']:
+                responseData = response['response']
+                self.friendsDetails.append(responseData)
+            else:
+                pass
+        self.on_get_friend_details.emit()
+        self.on_get_user_friends.emit()
 
+        # tasks = [task1, task2]
+        # 
+        # asyncio.run_coroutine_threadsafe(tasks, self.client.loop)
+        # task = []
+        # for friend in self.friends:
+        #     friendUsername = friend[0]
+        #     print(f"Processing friend: {friendUsername}")
+        #     # task.append(asyncio.create_task(self.get_user_details(friendUsername)))
+        #     response = await self.client.user_handler.get_user_details(friendUsername)
+
+    # 获取当前用户的好友
     async def getUserFriends(self, username):
         response = await self.client.user_handler.get_user_friends(username)
         if response['success']:
-            self.on_get_user_friends.emit(response['response'])
+            self.friends = response['response']
         else:
             pass
 
@@ -272,7 +352,13 @@ class FriendInterface(ScrollArea):
             self.userDetails.username_label.setText(selectUserName)
             self.userDetails.function_button.setChecked(True)
             self.userDetails.function_button.setCheckable(False)
-            self.userDetails.avatar_image.setPixmap(QPixmap(':/images/mhs.jpg'))
+
+            avatar_path = f"../resource/temp/{selectUserName}_avatar.jpg"
+
+            if os.path.exists(avatar_path):
+                self.userDetails.avatar_image.setPixmap(QPixmap(avatar_path))
+            else:
+                self.userDetails.avatar_image.setPixmap(QPixmap(':/images/mhs.jpg'))
             self.userDetails.avatar_image.setFixedSize(96, 96)
             if selectUserName in friendList:
                 self.userDetails.function_button.setText('发送消息')
@@ -295,6 +381,7 @@ class FriendInterface(ScrollArea):
         friendRequestWindow.on_reject_request.connect(self.respondRequest)
         friendRequestWindow.on_accept_request.connect(self.respondRequest)
         friendRequestWindow.on_window_close.connect(self.friendRequestsWindowClose)
+        # self.refreshButton.clicked()
 
     # async def asyncRespondRequest(self, request_id, response):
     #     await asyncio.gather(self.asyncTask(), self.respondFriendRequest(request_id, response))
@@ -304,9 +391,8 @@ class FriendInterface(ScrollArea):
         self.users = users
         self.refreshUsers()
 
-    @pyqtSlot(list)
-    def updateFriends(self, friends):
-        self.friends = friends
+    @pyqtSlot()
+    def updateFriends(self):
         self.refreshFriendsWidget()
 
     @pyqtSlot(list)
@@ -332,4 +418,4 @@ class FriendInterface(ScrollArea):
 
     @pyqtSlot()
     def friendRequestsWindowClose(self):
-        self.asyncFunctions()
+        self.useRefreshFriends()

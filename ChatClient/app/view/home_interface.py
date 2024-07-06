@@ -139,6 +139,7 @@ class HomeInterface(ScrollArea):
         if self.userDetails['avatar'] == 'default':
             self.banner.avatarImage.setPixmap(QPixmap(':/images/mhs.jpg'))
         else:
+            # 解码并显示用户头像
             avatarData = base64.b64decode(self.userDetails['avatar'])
 
             avatarImage = QImage()
@@ -206,13 +207,13 @@ class HomeInterface(ScrollArea):
         response = await self.client.user_handler.get_user_details(username)
         if response['success']:
             self.userDetails = response['response']
+            print(f"USERDETAILS_RESPONSE: {response}")
             self.setAvatarImage()
         else:
             pass
 
     async def changeAvatarImage(self, username, avatarImageData):
         response = await self.client.user_handler.update_avatar(username, avatarImageData)
-        print(response)
         if response:
             self.on_update_avatar_success.emit('success')
         else:

@@ -1,6 +1,8 @@
 import asyncio
+import os
 import sys
 import threading
+import shutil
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
@@ -51,6 +53,14 @@ class ClientThread(QThread):
 
 
 if __name__ == '__main__':
+    temp_path = '../resource/temp'
+
+    if not os.path.exists(temp_path):
+        os.makedirs(temp_path)
+    else:
+        shutil.rmtree(temp_path)
+        os.mkdir(temp_path)
+
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
@@ -70,7 +80,7 @@ if __name__ == '__main__':
     client.connection_established.connect(login_window.on_connection_established)
 
     client.run()
-    
+
 
     def onLoginSuccess(username):
         main_window = MainWindow(client, username)
