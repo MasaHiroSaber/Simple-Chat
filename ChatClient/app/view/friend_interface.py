@@ -217,6 +217,14 @@ class FriendInterface(ScrollArea):
         response = await self.client.user_handler.get_all_users(username)
         if response['success']:
             self.on_get_all_users.emit(response['response'])
+
+        else:
+            pass
+
+    async def getUserDetails(self, username):
+        response = await self.client.user_handler.get_user_details(username)
+        if response['success']:
+            print(response)
         else:
             pass
 
@@ -317,7 +325,7 @@ class FriendInterface(ScrollArea):
         if isSuccess:
             info_bar(InfoBar.success, self.userDetails, '成功', '好友申请已发送', position=InfoBarPosition.TOP)
         else:
-            info_bar(InfoBar.warning, self.userDetails,'警告','你已经发送过好友请求了', position=InfoBarPosition.TOP)
+            info_bar(InfoBar.warning, self.userDetails, '警告', '你已经发送过好友请求了', position=InfoBarPosition.TOP)
 
     @pyqtSlot()
     def friendRequestsWindowClose(self):

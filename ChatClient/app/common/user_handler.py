@@ -8,7 +8,7 @@ class UserHandler:
         self.reader = reader
         self.writer = writer
 
-    async def connectTest(self):
+    async def connect_test(self):
         request = {
             'type': 'connect'
         }
@@ -37,15 +37,33 @@ class UserHandler:
         response = await self.receive_response()
         return response
 
-    async def update_avatar(self, username, avatar_path):
+    async def get_user_details(self, username):
         request = {
-            'type': 'update_avatar',
-            'username': username,
-            'avatar_path': avatar_path
+            'type': 'get_user_details',
+            'username': username
         }
         await self.send_request(request)
         response = await self.receive_response()
         return response
+
+    async def update_avatar(self, username, avatarBase64):
+        chunkSize = 2048
+        totalChunks = (len(avatarBase64) + chunkSize - 1) // chunkSize
+
+        for i in range(totalChunks):
+            chunk = avatarBase64[i * chunkSize:(i + 1) * chunkSize]
+            request = {
+                'type': 'update_avatar',
+                'username': username,
+                'avatar_chunk': chunk,
+                'chunk_index': i,
+                'total_chunks': totalChunks
+            }
+            await self.send_request(request)
+            # await asyncio.sleep(1)
+            response = await self.receive_response()
+            # return response
+        return True, 'Updated avatar successfully'
 
     async def get_all_users(self, username):
         request = {
@@ -64,7 +82,7 @@ class UserHandler:
         await self.send_request(request)
         response = await self.receive_response()
         return response
-    
+
     async def send_friend_request(self, sender_username, receiver_username):
         request = {
             'type': 'send_friend_request',
@@ -84,7 +102,7 @@ class UserHandler:
         await self.send_request(request)
         response = await self.receive_response()
         return response
-    
+
     async def get_friend_requests(self, username):
         request = {
             'type': 'get_friend_requests',
@@ -93,14 +111,14 @@ class UserHandler:
         await self.send_request(request)
         response = await self.receive_response()
         return response
-        
+
     async def send_request(self, request):
         self.writer.write(json.dumps(request).encode('utf-8'))
         print('send a request: {}'.format(json.dumps(request).encode('utf-8')))
         await self.writer.drain()
 
     async def receive_response(self):
-        data = await self.reader.read(1024)
+        data = await self.reader.read(4096)
         print('received a response: {}'.format(data))
         response = json.loads(data.decode('utf-8'))
         return response

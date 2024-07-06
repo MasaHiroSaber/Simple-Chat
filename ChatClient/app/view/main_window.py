@@ -20,7 +20,7 @@ class MainWindow(FluentWindow):
         self.initWindow()
         self.client = client
         self.username = username
-        self.homeInterface = HomeInterface(self, self.username)
+        self.homeInterface = HomeInterface(self.client, self, self.username)
         self.friendInterface = FriendInterface(self.client, self, self.username)
 
         self.navigationInterface.setAcrylicEnabled(True)

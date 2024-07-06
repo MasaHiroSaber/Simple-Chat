@@ -27,10 +27,22 @@ class UserManager:
         else:
             return False, "Incorrect username or password"
 
-    def update_avatar(self, username, avatar_path):
+    def get_user_details(self, username):
+        try:
+            query = '''
+                SELECT id, password, username, avatar FROM users WHERE username = ?
+            '''
+            result = self.db.execute_query(query, (username,))
+
+            return True, result
+        except Exception as e:
+            print(e)
+            return False, "Username already exists"
+
+    def update_avatar(self, username, avatar):
         self.db.execute_non_query('''
             UPDATE users SET avatar = ? WHERE username = ?
-        ''', (avatar_path, username))
+        ''', (avatar, username))
         return True, "Avatar updated successfully"
 
     def get_user_friends(self, username):

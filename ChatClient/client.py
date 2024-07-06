@@ -32,7 +32,7 @@ class ChatClient(QObject):
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
             self.user_handler = UserHandler(self.reader, self.writer)
             self.connection_established.emit('Connection established')
-            data = await self.user_handler.connectTest()
+            data = await self.user_handler.connect_test()
 
         except Exception as e:
             print(f"Failed to connect: {e}")
