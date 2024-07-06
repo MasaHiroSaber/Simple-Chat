@@ -132,7 +132,9 @@ class HomeInterface(ScrollArea):
         self.vBoxLayout.setSpacing(40)
         self.vBoxLayout.addWidget(self.banner)
         self.vBoxLayout.setAlignment(Qt.AlignTop)
-
+    
+    
+    # 刷新头像
     def setAvatarImage(self):
         if self.userDetails['avatar'] == 'default':
             self.banner.avatarImage.setPixmap(QPixmap(':/images/mhs.jpg'))
@@ -195,7 +197,8 @@ class HomeInterface(ScrollArea):
             img_byte_arr = img_byte_arr.getvalue()
 
         return img_byte_arr
-
+    
+    # 运行异步函数
     async def run_tasks_sequentially(self):
         await self.getCurrentUserDetails(self.username)
 
