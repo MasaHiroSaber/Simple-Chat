@@ -1,0 +1,34 @@
+SettingInterface,
+#view {
+    background-color: transparent;
+}
+SingleDirectionScrollArea{ border: none; 
+    background-color: transparent;
+}
+
+QWidget{
+    background-color: transparent;
+}
+
+
+
+ScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+
+BannerWidget > #galleryLabel {
+    font: 42px 'Microsoft YaHei';
+    background-color: transparent;
+    color: black;
+    padding-left: 28px;
+}
+
+

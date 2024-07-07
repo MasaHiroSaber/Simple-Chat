@@ -211,10 +211,8 @@ class FriendInterface(ScrollArea):
             avatar_path = f"../resource/temp/{friend[0]}_avatar.jpg"
 
             if os.path.exists(avatar_path):
-                print(f"{friend[0]} avatar is exist")
                 avatarWidget = AvatarWidget(avatar_path)
             else:
-                print(f"{friend[0]} avatar is not exist")
                 avatarWidget = AvatarWidget(':/images/mhs.jpg')
             # avatarWidget.setPixmap(QPixmap(':/images/mhs.jpg'))
             avatarWidget.setRadius(32)
@@ -250,8 +248,6 @@ class FriendInterface(ScrollArea):
 
                 with open(image_file_path, 'wb') as image_file:
                     image_file.write(friendAvatarData)
-
-                print(f'Avatar for {friendName} saved to {image_file_path}')
 
     # 执行异步函数
     async def asyncTask(self):
@@ -290,7 +286,6 @@ class FriendInterface(ScrollArea):
         for friend in self.friends:
             friendName.append(friend[0])
         for name in friendName:
-            print(self.friends)
             response = await self.client.user_handler.get_user_details(name)
             if response['success']:
                 responseData = response['response']
@@ -393,6 +388,7 @@ class FriendInterface(ScrollArea):
 
     @pyqtSlot()
     def updateFriends(self):
+        self.parent().userFriends = self.friends
         self.refreshFriendsWidget()
 
     @pyqtSlot(list)

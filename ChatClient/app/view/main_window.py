@@ -18,12 +18,13 @@ class MainWindow(FluentWindow):
     def __init__(self, client, username=None):
         super().__init__()
         self.initWindow()
-        
+
         self.client = client
         self.username = username
+        self.userFriends = None
         self.homeInterface = HomeInterface(self.client, self, self.username)
         self.friendInterface = FriendInterface(self.client, self, self.username)
-        self.chatInterface = ChatInterface(self, self.username)
+        self.chatInterface = ChatInterface(self.client, self, self.username)
 
         self.navigationInterface.setAcrylicEnabled(True)
         # self.connectSignalToSlot()

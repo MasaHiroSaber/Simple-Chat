@@ -18,13 +18,21 @@ class MessageHandler:
         response = await self.receive_response()
         return response
 
-    async def receive_messages(self):
-        while True:
-            data = await self.reader.read(100)
-            if data:
-                message = json.loads(data.decode())
-                # Handle the message (e.g., print it, update UI, etc.)
-                print(f"Received message: {message}")
+    async def get_messages(self, user_name, friend_name):
+        request = {
+            'type': 'get_messages',
+            'user_name': user_name,
+            'friend_name': friend_name
+        }
+        await self.send_request(request)
+        response = await self.receive_response()
+        return response
+        # while True:
+        #     data = await self.reader.read(100)
+        #     if data:
+        #         message = json.loads(data.decode())
+        #         # Handle the message (e.g., print it, update UI, etc.)
+        #         print(f"Received message: {message}")
 
     async def send_request(self, request):
         self.writer.write(json.dumps(request).encode())

@@ -16,6 +16,7 @@ class StyleSheet(StyleSheetBase, Enum):
     GALLERY_INTERFACE = "gallery_interface"
     NAVIGATION_VIEW_INTERFACE = "navigation_view_interface"
     FRIEND_INTERFACE = "friend_interface"
+    CHAT_INTERFACE = 'chat_interface'
 
     def path(self, theme=Theme.AUTO):
         theme = qconfig.theme if theme == Theme.AUTO else theme

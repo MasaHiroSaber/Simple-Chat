@@ -10,7 +10,7 @@ class ChatManager:
         ''', (sender_id, receiver_id, message, msg_type))
         return True, "Message sent successfully"
 
-    def retrieve_messages(self, user1_id, user2_id):
+    def get_messages(self, user1_id, user2_id):
         return self.db.execute_query('''
             SELECT * FROM messages
             WHERE (sender_id = ? AND receiver_id = ?)

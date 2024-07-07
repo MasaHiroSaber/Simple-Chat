@@ -12,7 +12,6 @@ class ChatSession(QWidget, UiCharSession):
     def __init__(self, parent=None, icon=":/images/mhs.jpg", name="first"):
         super(ChatSession, self).__init__(parent)
 
-
         self.setupUi(self)
         self.sum = 0  # 气泡数量
         self.widgetList = []  # 记录气泡
@@ -37,6 +36,7 @@ class ChatSession(QWidget, UiCharSession):
         # 是否初始化
         self.ifInit = 0
         self.name = name
+
     # 回车键绑定发送
     def Event(self):
         """
@@ -83,3 +83,10 @@ class ChatSession(QWidget, UiCharSession):
     def adjustScrollToMaxValue(self):
         scrollbar = self.scrollArea.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    main = ChatSession()
+    main.show()
+    sys.exit(app.exec_())

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from user_manager import UserManager
 from chat_manager import ChatManager
@@ -14,6 +15,7 @@ class ChatServer:
         self.user_manager = UserManager()
         self.chat_manager = ChatManager()
         self.incoming_avatars = {}
+        # self.executor = ThreadPoolExecutor(max_workers=4)
 
     async def handle_client(self, reader, writer):
         while True:
@@ -31,11 +33,13 @@ class ChatServer:
             logging.info(f"Received {message} from {addr}")
 
             response = await self.process_message(message, writer, reader)
+
             if response:
                 writer.write(response.encode('utf-8'))
                 await writer.drain()
             logging.info(f"Send: {response}")
 
+    # async def process_message(self, message, writer, reader):
     async def process_message(self, message, writer, reader):
         try:
             message_data = json.loads(message)
@@ -114,6 +118,11 @@ class ChatServer:
                 success, response = self.chat_manager.send_message(
                     message_data['sender_id'], message_data['receiver_id'],
                     message_data['message'], message_data['msg_type'])
+                
+            case 'get_message':
+                success, response = self.chat_manager.get_messages(
+                    message_data['sender_id'], message_data['receiver_id']
+                )
             case 'connect':
                 success = True
                 response = 'connect success'

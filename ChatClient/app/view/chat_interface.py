@@ -1,28 +1,41 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QScrollArea, QHBoxLayout, QListWidgetItem, QLabel, \
-    QPushButton
-from qfluentwidgets import ScrollArea, SearchLineEdit, ListWidget
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt, pyqtSlot, QSize, QRect
+from PyQt5.QtGui import QPixmap, QPainter, QBrush, QColor
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QHBoxLayout, QLabel
+from qfluentwidgets import ScrollArea, ListWidget, PushButton, SingleDirectionScrollArea, PlainTextEdit, \
+    ToolButton, FluentIcon
 
 from ChatClient.app.common.style_sheet import StyleSheet
-from ChatClient.app.resource.utils.ChatSession import ChatSession
+
+
+class MyMessageBox(QWidget):
+    def __init__(self, ico, text, direction=Qt.LeftToRight):
+        super().__init__()
+        self.initUI()
+        
+    def initUI(self):
+        layout = QVBoxLayout()
+
 
 
 class ChatInterface(ScrollArea):
 
-    def __init__(self, parent=None, username=None, avatar="default"):
+    def __init__(self, client, parent=None, username=None):
         super().__init__(parent=parent)
+        self.client = client
         self.username = username
-        self.avatar = avatar
+        self.currentChatFriend = None
         self.friends = None
+        self.messageTask = None
         self.view = QWidget(self)
         self.hBoxLayout = QHBoxLayout(self.view)
+
+        self.parent().friendInterface.on_get_user_friends.connect(self.refreshWidget)
 
         self.__initWidgets__()
 
     def __initWidgets__(self):
         # 用于初始生成右侧页面的
-        self.judge = 1
-        self.p = 0
         self.view.setObjectName('view')
         self.setObjectName('chatInterface')
 
@@ -30,85 +43,93 @@ class ChatInterface(ScrollArea):
         self.setWidget(self.view)
         self.setWidgetResizable(True)
 
-        StyleSheet.HOME_INTERFACE.apply(self)
+        self.leftLayout = QVBoxLayout()
+        self.rightLayout = QVBoxLayout()
+        self.rightLayout.setContentsMargins(10, 0, 10, 0)
+
+        self.rightTopLayout = QVBoxLayout()
+        self.rightBottomLayout = QHBoxLayout()
+        # 设置左侧widget
+        self.friendList = ListWidget()
+        self.friendList.setMaximumWidth(200)
+        self.friendList.setSelectRightClickedRow(True)
+        self.friendList.itemSelectionChanged.connect(self.refreshChatSession)
+        self.sendButton = ToolButton()
+        self.sendButton.setIcon(FluentIcon.SEND)
+        self.sendButton.setIconSize(QSize(30, 30))
+        self.sendButton.setFixedSize(80, 80)
+        self.sendButton.clicked.connect(self.sendChatMessage)
+
+        self.chatSession = SingleDirectionScrollArea(orient=Qt.Vertical)
+        self.chatSession.setStyleSheet('SingleDirectionScrollArea{border: 1px gray;' 'border-radius: 20px;}')
+        self.MessageSendingBox = PlainTextEdit()
+        # self.MessageSendingBox.setStyleSheet('PlainTextEdit{border: 3px solid gray;' 'border-radius: '
+        #                                      '20px;}')
+        self.MessageSendingBox.setMinimumHeight(80)
+        self.MessageSendingBox.setMaximumHeight(80)
+
+        self.hBoxLayout.addLayout(self.leftLayout)
+        self.hBoxLayout.addLayout(self.rightLayout)
+        self.leftLayout.addWidget(self.friendList)
+
+        self.rightLayout.addLayout(self.rightTopLayout)
+        self.rightLayout.addLayout(self.rightBottomLayout)
+
+        self.rightTopLayout.addWidget(self.chatSession)
+        self.rightBottomLayout.addWidget(self.MessageSendingBox)
+        self.rightBottomLayout.addWidget(self.sendButton)
+
         QScrollArea.setStyleSheet(self, 'background-color: transparent')
 
-        # 设置左侧widget
-        self.leftWidget = ListWidget()
-        self.leftLayout = QVBoxLayout()
-        self.leftWidget.setLayout(self.leftLayout)
-        self.hBoxLayout.addWidget(self.leftWidget)
+        self.icon = QtGui.QPixmap(":/images/mhs.jpg")
 
-        # 用来更新左侧列表，并返回一个含有右侧会话的字典
-        # 同时以第一个为右侧最开始的页面
-        self.ChatSessionDict, self.stands = self.updateLeftList()
+        StyleSheet.CHAT_INTERFACE.apply(self)
 
-        self.leftWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    def setChatSession(self, currentChatFriend):
 
-        # 通过函数跟新右侧窗口,创建一个临时的Widget
-        self.updateRightWidget(list(self.ChatSessionDict.keys())[0])
-        self.judge = 0
+        view = QWidget()
+        layout = QVBoxLayout(view)
+        for i in range(1, 50):
+            layout.addWidget(MyMessageBox(self, self.icon, 'self.text', Qt.LeftToRight))
+        self.chatSession.setWidget(view)
+        pass
 
-    def updateRightWidget(self, ChatSName):
-        """
+    def initChatSession(self):
+        self.currentChatFriend = self.friendList.item(0)
+        self.friendList.setCurrentItem(self.currentChatFriend)
+        view = QWidget()
+        layout = QVBoxLayout(view)
+        for i in range(1, 50):
+            layout.addWidget(PushButton(f"按钮 {i}"))
+        self.chatSession.setWidget(view)
 
-        :param
-        ChatSName: 传入的是对应的用户名
-        :return:
-        """
+    def refreshFriendsListWidget(self):
+        stands = []
+        for friend in self.friends:
+            stands.append(friend[0])
 
-        if not self.judge == 1:
-            # 更新字典里面对应的ChatSession
-            self.ChatSessionDict[self.p] = self.rightWidget
-            # 溢出目前的Widget用来更新
-            self.hBoxLayout.removeWidget(self.rightWidget)
+        self.friendList.addItems(stands)
 
-        ChatS = self.ChatSessionDict[ChatSName]
+    def refreshChatSession(self):
+        self.currentChatFriend = self.friendList.currentItem().text()
+        self.setChatSession(self.currentChatFriend)
+        print(self.currentChatFriend)
 
-        self.rightWidget = ChatSession()
-        # 判断该会话有没有过这个流程
-        if self.rightWidget.ifInit == 0:
-            self.rightLayout = QVBoxLayout()
-            self.rightWidget.setLayout(self.rightLayout)
+    def sendChatMessage(self):
+        self.start_chat(self.currentChatFriend)
 
-            self.rightWidget.ifInit = 1
+    async def messageHandler(self, friendName, message=''):
+        pass
 
-        self.p = ChatSName
-        self.hBoxLayout.addWidget(self.rightWidget)
-        print(self.rightWidget.name + "endif")
+    def start_chat(self, friend_username, message=''):
+        self.currentChatFriend = friend_username
+        pass
 
-    def updateLeftList(self):
-        """
-        用来跟新左侧用户栏页面的
-        stands是储存用户民的列表
+    def stop_chat(self):
+        pass
 
-        :return:
-        """
-
-        self.friends = self.parent().friendInterface.friends
-
-        # 用来存贮用户名的列表
-        stands = [
-            'Faker', 'otto', 'monikaBeiZi'
-        ]
-
-        # 添加列表项
-        for stand in stands:
-            item = QListWidgetItem(stand)
-            self.leftWidget.addItem(item)
-
-        self.leftWidget.itemClicked.connect(self.displayChat)
-
-        # 创建一个字典储存每一个对象的会话
-        rightWidget = {}
-        for i in stands:
-            self.rightWidget = ChatSession(name=i)
-            self.rightLayout = QVBoxLayout()
-            self.rightWidget.setLayout(self.rightLayout)
-            rightWidget[i] = self.rightWidget
-
-        return rightWidget, stands
-
-    def displayChat(self, item):
-        print(f"click :{item.text()}")
-        self.updateRightWidget(str(item.text()))
+    @pyqtSlot()
+    def refreshWidget(self):
+        self.friends = self.parent().userFriends
+        self.refreshFriendsListWidget()
+        self.initChatSession()
