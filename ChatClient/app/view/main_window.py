@@ -51,7 +51,7 @@ class MainWindow(FluentWindow):
         self.setResizeEnabled(False)
         self.setMinimumWidth(760)
         self.setWindowIcon(
-            QIcon("D:\JetBrains\MasaHiroSaber\PyCharmProjects\Simple-Chat\ChatClient\\app\\resource\images\logo.png"))
+            QIcon(":/images/logo.png"))
         self.setWindowTitle('Simple-Chat')
 
         self.setMicaEffectEnabled(True)
