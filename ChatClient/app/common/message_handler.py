@@ -1,12 +1,13 @@
 import asyncio
 import json
 
+
 class MessageHandler:
     def __init__(self, reader, writer):
         self.reader = reader
         self.writer = writer
 
-    async def send_message(self, sender_id, receiver_id, message, msg_type='text'):
+    async def csend_message(self, sender_id, receiver_id, message, msg_type='text'):
         request = {
             'type': 'send_message',
             'sender_id': sender_id,
@@ -18,7 +19,7 @@ class MessageHandler:
         response = await self.receive_response()
         return response
 
-    async def get_messages(self, user_name, friend_name):
+    async def cget_messages(self, user_name, friend_name):
         request = {
             'type': 'get_messages',
             'user_name': user_name,
@@ -36,9 +37,11 @@ class MessageHandler:
 
     async def send_request(self, request):
         self.writer.write(json.dumps(request).encode())
+        print('send a request: {}'.format(json.dumps(request).encode('utf-8')))
         await self.writer.drain()
 
     async def receive_response(self):
-        data = await self.reader.read(100)
+        data = await self.reader.read(4096)
+        print('received a response: {}'.format(data))
         response = json.loads(data.decode())
         return response

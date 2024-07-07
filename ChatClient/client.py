@@ -7,6 +7,7 @@ import shutil
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
 
+from ChatClient.app.common.message_handler import MessageHandler
 from ChatClient.app.common.user_handler import UserHandler
 from ChatClient.app.view.main_window import MainWindow
 from app.ui.login_window_show import LoginWindow
@@ -26,6 +27,7 @@ class ChatClient(QObject):
         self.reader = None
         self.writer = None
         self.user_handler = None
+        self.chat_handler = None
         self.loop = asyncio.get_event_loop()
 
     async def connect(self):
@@ -33,6 +35,7 @@ class ChatClient(QObject):
             print(f"当前线程:{threading.current_thread()}")
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
             self.user_handler = UserHandler(self.reader, self.writer)
+            self.chat_handler = MessageHandler(self.reader, self.writer)
             self.connection_established.emit('Connection established')
             data = await self.user_handler.connect_test()
 
@@ -58,8 +61,9 @@ if __name__ == '__main__':
     if not os.path.exists(temp_path):
         os.makedirs(temp_path)
     else:
-        shutil.rmtree(temp_path)
-        os.mkdir(temp_path)
+        pass
+        # shutil.rmtree(temp_path)
+        # os.mkdir(temp_path)
 
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)

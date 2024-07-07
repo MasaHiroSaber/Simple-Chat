@@ -118,10 +118,9 @@ class ChatServer:
                 success, response = self.chat_manager.send_message(
                     message_data['sender_id'], message_data['receiver_id'],
                     message_data['message'], message_data['msg_type'])
-                
-            case 'get_message':
+            case 'get_messages':
                 success, response = self.chat_manager.get_messages(
-                    message_data['sender_id'], message_data['receiver_id']
+                    message_data['user_name'], message_data['friend_name']
                 )
             case 'connect':
                 success = True

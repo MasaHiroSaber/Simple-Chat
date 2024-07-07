@@ -1,24 +1,72 @@
+import asyncio
+import os
+
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, pyqtSlot, QSize, QRect
+from PyQt5.QtCore import Qt, pyqtSlot, QSize, QRect, pyqtSignal
 from PyQt5.QtGui import QPixmap, QPainter, QBrush, QColor
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QHBoxLayout, QLabel, QBoxLayout, QSizePolicy
 from qfluentwidgets import ScrollArea, ListWidget, PushButton, SingleDirectionScrollArea, PlainTextEdit, \
-    ToolButton, FluentIcon
+    ToolButton, FluentIcon, AvatarWidget, BodyLabel
 
 from ChatClient.app.common.style_sheet import StyleSheet
 
 
 class MyMessageBox(QWidget):
-    def __init__(self, ico, text, direction=Qt.LeftToRight):
+    def __init__(self, sender, receive, isUserSend,message='Hello'):
         super().__init__()
-        self.initUI()
-        
-    def initUI(self):
-        layout = QVBoxLayout()
+        self.sender = sender
+        self.receive = receive
+        self.message = message
+        self.isUserSend = isUserSend
 
+        self.initUI()
+
+    def initUI(self):
+        layout = QHBoxLayout()
+        self.avatar = AvatarWidget(self)
+        avatar_path = f"../resource/temp/{self.sender}_avatar.jpg"
+
+        if os.path.exists(avatar_path):
+            self.avatar.setPixmap(QPixmap(avatar_path))
+        else:
+            self.avatar.setPixmap(QPixmap(':/images/mhs.jpg'))
+
+        # self.avatar.setPixmap(QPixmap(':/images/mhs.jpg'))
+        self.avatar.setRadius(16)
+        layout.addWidget(self.avatar)
+
+        self.messageContent = BodyLabel(self)
+        self.messageContent.setText(self.message)
+        if self.isUserSend:
+            self.messageContent.setStyleSheet("""
+                QLabel {
+                    background-color: rgb(100,210,248);
+                    border-radius: 15px;
+                    padding: 10px;
+                    color: white;
+                }
+            """)
+        else:
+            self.messageContent.setStyleSheet("""
+                QLabel {
+                    background-color: rgb(200,200,200);
+                    border-radius: 15px;
+                    padding: 10px;
+                    color: white;
+                }
+            """)
+            
+        layout.addWidget(self.messageContent)
+
+        if self.isUserSend:
+            layout.setDirection(QBoxLayout.RightToLeft)
+            
+        self.setLayout(layout)
 
 
 class ChatInterface(ScrollArea):
+    on_get_message = pyqtSignal(list)
+    on_send_message = pyqtSignal()
 
     def __init__(self, client, parent=None, username=None):
         super().__init__(parent=parent)
@@ -27,10 +75,12 @@ class ChatInterface(ScrollArea):
         self.currentChatFriend = None
         self.friends = None
         self.messageTask = None
+        self.difMessage = None
         self.view = QWidget(self)
         self.hBoxLayout = QHBoxLayout(self.view)
 
         self.parent().friendInterface.on_get_user_friends.connect(self.refreshWidget)
+        self.on_get_message.connect(self.getFriendMessage)
 
         self.__initWidgets__()
 
@@ -58,13 +108,19 @@ class ChatInterface(ScrollArea):
         self.sendButton.setIcon(FluentIcon.SEND)
         self.sendButton.setIconSize(QSize(30, 30))
         self.sendButton.setFixedSize(80, 80)
-        self.sendButton.clicked.connect(self.sendChatMessage)
+        self.sendButton.clicked.connect(self.useSendMessage)
 
         self.chatSession = SingleDirectionScrollArea(orient=Qt.Vertical)
-        self.chatSession.setStyleSheet('SingleDirectionScrollArea{border: 1px gray;' 'border-radius: 20px;}')
+        self.chatSession.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.chatSession.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.chatSession.setStyleSheet('SingleDirectionScrollArea{border: 1px solid gray;' 'border-radius: 20px;}')
+
+        scrollbar = self.chatSession.verticalScrollBar()
+        scrollbar.rangeChanged.connect(self.adjustScrollToMaxValue)
+
         self.MessageSendingBox = PlainTextEdit()
-        # self.MessageSendingBox.setStyleSheet('PlainTextEdit{border: 3px solid gray;' 'border-radius: '
-        #                                      '20px;}')
+        # self.MessageSendingBox.setStyleSheet('PlainTextEdit{border: 2px solid gray;' 'border-radius: '
+        #                                      '10px;}')
         self.MessageSendingBox.setMinimumHeight(80)
         self.MessageSendingBox.setMaximumHeight(80)
 
@@ -85,23 +141,32 @@ class ChatInterface(ScrollArea):
 
         StyleSheet.CHAT_INTERFACE.apply(self)
 
-    def setChatSession(self, currentChatFriend):
+    def adjustScrollToMaxValue(self):
+        scrollbar = self.chatSession.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+        
+    def setChatSession(self, currentChatFriend, messageData=None):
+        if messageData:
+            view = QWidget()
+            view.setMinimumWidth(self.chatSession.width())
+            layout = QVBoxLayout(view)
+            for message in reversed(messageData):
+                if message[0] == self.username:
+                    layout.addWidget(MyMessageBox(sender=message[0], receive=message[1], message=message[2], isUserSend=True),
+                                     alignment=Qt.AlignRight)
+                else:
+                    layout.addWidget(MyMessageBox(sender=message[0], receive=message[1], message=message[2], isUserSend=False),
+                                     alignment=Qt.AlignLeft)
+            self.chatSession.setWidget(view)
+            # self.chatSession.widgetResizable()
+            # pass
+ 
+        self.adjustScrollToMaxValue()
 
-        view = QWidget()
-        layout = QVBoxLayout(view)
-        for i in range(1, 50):
-            layout.addWidget(MyMessageBox(self, self.icon, 'self.text', Qt.LeftToRight))
-        self.chatSession.setWidget(view)
-        pass
 
     def initChatSession(self):
         self.currentChatFriend = self.friendList.item(0)
         self.friendList.setCurrentItem(self.currentChatFriend)
-        view = QWidget()
-        layout = QVBoxLayout(view)
-        for i in range(1, 50):
-            layout.addWidget(PushButton(f"按钮 {i}"))
-        self.chatSession.setWidget(view)
 
     def refreshFriendsListWidget(self):
         stands = []
@@ -112,24 +177,48 @@ class ChatInterface(ScrollArea):
 
     def refreshChatSession(self):
         self.currentChatFriend = self.friendList.currentItem().text()
-        self.setChatSession(self.currentChatFriend)
-        print(self.currentChatFriend)
+        # self.setChatSession(self.currentChatFriend)
+        self.stop_chat()
+        self.useGetMessage()
+        # print(self.currentChatFriend)
 
-    def sendChatMessage(self):
-        self.start_chat(self.currentChatFriend)
+    def useGetMessage(self):
+        asyncio.run_coroutine_threadsafe(self.GetMessageStart(self.currentChatFriend), self.client.loop)
 
-    async def messageHandler(self, friendName, message=''):
-        pass
+    async def GetMessageStart(self, friend_username):
+        self.messageTask = asyncio.create_task(self.getMessage(friend_username))
+        await self.messageTask
 
-    def start_chat(self, friend_username, message=''):
-        self.currentChatFriend = friend_username
-        pass
+    async def getMessage(self, friendName):
+        while True:
+            message = await self.client.chat_handler.cget_messages(self.username, friendName)
+            self.on_get_message.emit(message['response'])
+            # await self.client.chat_handler.csend_message(self.username, friendName, messageContent)
+            await asyncio.sleep(2)
+    
+    def useSendMessage(self):
+        message = self.MessageSendingBox.toPlainText()
+        if message:
+            asyncio.run_coroutine_threadsafe(self.sendMessageStart(self.currentChatFriend, messageContent=message), self.client.loop)
+
+    async def sendMessageStart(self, friendName, messageContent=None):
+        self.messageTask = asyncio.create_task(self.sendMessage(friendName, messageContent))
+
+    async def sendMessage(self, friendName, messageContent=None):
+        await self.client.chat_handler.csend_message(self.username, friendName, messageContent)
 
     def stop_chat(self):
-        pass
+        if self.messageTask is not None:
+            self.messageTask.cancel()  # 取消当前任务
+            self.messageTask = None
 
     @pyqtSlot()
     def refreshWidget(self):
         self.friends = self.parent().userFriends
         self.refreshFriendsListWidget()
-        self.initChatSession()
+        # self.initChatSession()
+
+    @pyqtSlot(list)
+    def getFriendMessage(self, message):
+        self.setChatSession(self.currentChatFriend, message)
+        pass

@@ -47,7 +47,8 @@ class MainWindow(FluentWindow):
         # self.addSubInterface()
 
     def initWindow(self):
-        self.resize(960, 780)
+        self.resize(1024, 760)
+        self.setResizeEnabled(False)
         self.setMinimumWidth(760)
         self.setWindowIcon(
             QIcon("D:\JetBrains\MasaHiroSaber\PyCharmProjects\Simple-Chat\ChatClient\\app\\resource\images\logo.png"))
@@ -72,12 +73,6 @@ class MainWindow(FluentWindow):
         if hasattr(self, 'splashScreen'):
             self.splashScreen.resize(self.size())
 
-    # def switchToFunction(self, routeKey, index):
-    #     interfaces = self.findChildren(HomeFunctionInterface)
-    #     for w in interfaces:
-    #         if w.objectName() == routeKey:
-    #             self.stackedWidget.setCurrentWidget(w, False)
-    #             w.scrollToCard(index)
 
 
 if __name__ == '__main__':
