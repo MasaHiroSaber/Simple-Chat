@@ -6,6 +6,8 @@ import shutil
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
 
 from ChatClient.app.common.message_handler import MessageHandler
 from ChatClient.app.common.user_handler import UserHandler
@@ -54,8 +56,8 @@ class ClientThread(QThread):
     def run(self):
         self.client.loop.run_forever()
 
-
-if __name__ == '__main__':
+def main():
+# if __name__ == '__main__':
     temp_path = '../resource/temp'
 
     if not os.path.exists(temp_path):
@@ -98,3 +100,9 @@ if __name__ == '__main__':
     login_window.login_success.connect(onLoginSuccess)
 
     app.exec_()
+
+if __name__ == '__main__':
+    graphviz = GraphvizOutput()
+    graphviz.output_file = "D:\\JetBrains\\MasaHiroSaber\\PyCharmProjects\\Simple-Chat\\client.png"
+    with PyCallGraph(output=graphviz):
+        main()

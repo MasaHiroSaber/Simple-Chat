@@ -3,6 +3,9 @@ import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
+
 from user_manager import UserManager
 from chat_manager import ChatManager
 
@@ -141,9 +144,18 @@ class ChatServer:
     def start(self):
         asyncio.run(self.run_server())
         # self.loop.run_until_complete(self.run_server())
+        
 
+# def main():
+#     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+#     chat_server = ChatServer()
+#     chat_server.start()
 
 if __name__ == '__main__':
+    # graphviz = GraphvizOutput()
+    # graphviz.output_file = "D:\\JetBrains\\MasaHiroSaber\\PyCharmProjects\\Simple-Chat\\server.png"
+    # with PyCallGraph(output=graphviz):
+    #     main()
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     chat_server = ChatServer()
     chat_server.start()
