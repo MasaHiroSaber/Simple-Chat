@@ -2,12 +2,9 @@ import asyncio
 import os
 import sys
 import threading
-import shutil
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication
-from pycallgraph import PyCallGraph
-from pycallgraph.output import GraphvizOutput
 
 from ChatClient.app.common.message_handler import MessageHandler
 from ChatClient.app.common.user_handler import UserHandler
@@ -15,11 +12,8 @@ from ChatClient.app.view.main_window import MainWindow
 from app.ui.login_window_show import LoginWindow
 
 
-def handleSignal(message):
-    print(message)
-
-
 class ChatClient(QObject):
+    # 信号：连接建立时触发
     connection_established = pyqtSignal(str)
 
     def __init__(self, host='127.0.0.1', port=8888):
@@ -33,6 +27,7 @@ class ChatClient(QObject):
         self.loop = asyncio.get_event_loop()
 
     async def connect(self):
+        # 尝试连接到服务器
         try:
             print(f"当前线程:{threading.current_thread()}")
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
@@ -45,6 +40,7 @@ class ChatClient(QObject):
             print(f"Failed to connect: {e}")
 
     def run(self):
+        # 在线程中运行连接任务
         asyncio.run_coroutine_threadsafe(self.connect(), self.loop)
 
 
@@ -54,10 +50,11 @@ class ClientThread(QThread):
         self.client = client
 
     def run(self):
+        # 运行事件循环
         self.client.loop.run_forever()
 
-def main():
-# if __name__ == '__main__':
+
+if __name__ == '__main__':
     temp_path = '../resource/temp'
 
     if not os.path.exists(temp_path):
@@ -66,43 +63,27 @@ def main():
         pass
         # shutil.rmtree(temp_path)
         # os.mkdir(temp_path)
-
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
-
     app = QApplication(sys.argv)
-
     client = ChatClient()
-
     client_thread = ClientThread(client)
     client_thread.start()
-    # client.connection_established.connect(handleSignal)
-
     login_window = LoginWindow(client)
     login_window.show()
-
     client.connection_established.connect(login_window.on_connection_established)
-
     client.run()
 
 
     def onLoginSuccess(username):
+        # 登录成功后显示主窗口
         main_window = MainWindow(client, username)
         main_window.show()
-
         main_window.setMicaEffectEnabled(True)
-
         login_window.close()
 
 
     login_window.login_success.connect(onLoginSuccess)
-
     app.exec_()
-
-if __name__ == '__main__':
-    graphviz = GraphvizOutput()
-    graphviz.output_file = "D:\\JetBrains\\MasaHiroSaber\\PyCharmProjects\\Simple-Chat\\client.png"
-    with PyCallGraph(output=graphviz):
-        main()

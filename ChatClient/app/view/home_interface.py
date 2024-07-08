@@ -28,8 +28,6 @@ class BannerWidget(QWidget):
         self.banner = QPixmap(':/images/header1.png')
         self.galleryLabel.setObjectName('galleryLabel')
         self.avatarImage = AvatarWidget(self)
-        # self.avatarImage.setFixedSize(96, 96)
-        # self.avatarImage.move(40, 200)
 
         self.changeAvatarImage = PillToolButton(self)
         self.changeAvatarImage.setIcon(FIF.EDIT)
@@ -50,16 +48,7 @@ class BannerWidget(QWidget):
         self.vBoxLayout.setSpacing(0)
         self.vBoxLayout.setContentsMargins(0, 20, 0, 0)
         self.vBoxLayout.addWidget(self.galleryLabel)
-        # self.vBoxLayout.addWidget(self.avatarImage)
         self.vBoxLayout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-
-    # def setAvatarImage(self):
-    #     if self.avatarImageData == 'default':
-    #         print('isDefault')
-    #         self.avatarImage.setPixmap(QPixmap(':/images/mhs.jpg'))
-    #     else:
-    #         pass
-    #         # self.avatarImage.setPixmap(QPixmap(self.avatarImage))
 
     def paintEvent(self, e):
         super().paintEvent(e)
@@ -114,9 +103,6 @@ class HomeInterface(ScrollArea):
         self.view = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self.view)
         self.__initWidget()
-        # self.loadSamples()
-
-        # self.useGetCurrentUserDetails()
 
     def __initWidget(self):
         self.view.setObjectName('view')
@@ -132,7 +118,6 @@ class HomeInterface(ScrollArea):
         self.vBoxLayout.setSpacing(40)
         self.vBoxLayout.addWidget(self.banner)
         self.vBoxLayout.setAlignment(Qt.AlignTop)
-
 
     # 刷新头像
     def setAvatarImage(self):
@@ -207,7 +192,6 @@ class HomeInterface(ScrollArea):
         response = await self.client.user_handler.get_user_details(username)
         if response['success']:
             self.userDetails = response['response']
-            print(f"USERDETAILS_RESPONSE: {response}")
             self.setAvatarImage()
         else:
             pass

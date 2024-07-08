@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication
 from qfluentwidgets import (NavigationAvatarWidget, NavigationItemPosition, MessageBox, FluentWindow,
                             SplashScreen)
 from qfluentwidgets import FluentIcon as FIF
-from ChatClient.app.common.signal_bus import signalBus
+# from ChatClient.app.common.signal_bus import signalBus
 
 from ChatClient.app.view.home_interface import HomeInterface
 from ChatClient.app.view.friend_interface import FriendInterface
@@ -15,7 +15,9 @@ from ChatClient.app.view.chat_interface import ChatInterface
 
 
 class MainWindow(FluentWindow):
+    """主窗口类，继承自FluentWindow"""
     def __init__(self, client, username=None):
+        """初始化主窗口"""
         super().__init__()
         self.initWindow()
 
@@ -27,16 +29,12 @@ class MainWindow(FluentWindow):
         self.chatInterface = ChatInterface(self.client, self, self.username)
 
         self.navigationInterface.setAcrylicEnabled(True)
-        # self.connectSignalToSlot()
 
         self.initNavigation()
         self.splashScreen.finish()
 
-    # def connectSignalToSlot(self):
-    #     signalBus.micaEnableChanged.connect(self.setMicaEffectEnabled)
-    # signalBus.switchToSampleCard.connect(self.switchToFuntion)
-
     def initNavigation(self):
+        """初始化导航栏"""
         self.addSubInterface(self.homeInterface, FIF.HOME, self.tr('主页'))
         self.navigationInterface.addSeparator()
 
@@ -44,9 +42,8 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.friendInterface, FIF.ROBOT, self.tr('好友'))
         self.addSubInterface(self.chatInterface, FIF.CHAT, self.tr('聊天'))
 
-        # self.addSubInterface()
-
     def initWindow(self):
+        """初始化窗口设置"""
         self.resize(1024, 760)
         self.setResizeEnabled(False)
         self.setMinimumWidth(760)
@@ -69,13 +66,14 @@ class MainWindow(FluentWindow):
         QApplication.processEvents()
 
     def resizeEvent(self, e):
+        """重写调整窗口大小事件"""
         super().resizeEvent(e)
         if hasattr(self, 'splashScreen'):
             self.splashScreen.resize(self.size())
 
 
-
 if __name__ == '__main__':
+    """主程序入口"""
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)

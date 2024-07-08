@@ -7,6 +7,7 @@ class ChatManager:
     def __init__(self):
         self.db = Database()
 
+    # 接收到消息后，将消息存入数据库
     def send_message(self, sender_id, receiver_id, message, msg_type='text'):
         if message:
             self.db.execute_non_query('''
@@ -17,6 +18,7 @@ class ChatManager:
         else:
             return False, "No message to send"
 
+    # 获取指定用户之间的聊天记录
     def get_messages(self, user1_name, user2_name):
         result = self.db.execute_query('''
             SELECT sender_id, receiver_id, message FROM messages

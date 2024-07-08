@@ -8,6 +8,7 @@ class UserManager:
     def __init__(self):
         self.db = Database()
 
+    # 注册
     def register_user(self, username, password, avatar='default_avatar.png'):
         try:
             self.db.execute_non_query('''
@@ -18,6 +19,7 @@ class UserManager:
         except sqlite3.IntegrityError:
             return False, "Username already exists"
 
+    # 登录
     def login_user(self, username, password):
         result = self.db.execute_query('''
             SELECT id FROM users WHERE username = ? AND password = ?
@@ -27,6 +29,7 @@ class UserManager:
         else:
             return False, "Incorrect username or password"
 
+    # 获取用户信息
     def get_user_details(self, username):
         try:
             query = '''
@@ -39,12 +42,14 @@ class UserManager:
             print(e)
             return False, "Username already exists"
 
+    # 更新用户头像
     def update_avatar(self, username, avatar):
         self.db.execute_non_query('''
             UPDATE users SET avatar = ? WHERE username = ?
         ''', (avatar, username))
         return True, "Avatar updated successfully"
 
+    # 添加好友
     def get_user_friends(self, username):
         query = '''
             SELECT u2.username
@@ -56,6 +61,7 @@ class UserManager:
         result = self.db.execute_query(query, (username,))
         return True, result
 
+    # 获取所有用户
     def get_all_users(self, username):
         query = '''
             SELECT id, username
@@ -66,6 +72,7 @@ class UserManager:
         result = self.db.execute_query(query, (username,))
         return True, result
 
+    # 发送好友请求
     def send_friend_request(self, sender_username, receiver_username):
         sender_id = self.db.execute_query('SELECT id FROM users WHERE username = ?', (sender_username,))
         receiver_id = self.db.execute_query('SELECT id FROM users WHERE username = ?', (receiver_username,))
@@ -101,6 +108,7 @@ class UserManager:
         except sqlite3.IntegrityError:
             return False, "Unable to send friend request"
 
+    # 处理好友请求
     def respond_friend_request(self, request_id, response):
         if response not in ['accepted', 'rejected']:
             return False, "Invalid response"
@@ -122,6 +130,7 @@ class UserManager:
                 ''', (receiver_id, sender_id))
         return True, "Friend request responded"
 
+    # 获取好友请求
     def get_friend_requests(self, username):
         user_id = self.db.execute_query('SELECT id FROM users WHERE username = ?', (username,))
         if not user_id:

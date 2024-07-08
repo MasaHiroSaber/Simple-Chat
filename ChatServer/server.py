@@ -1,13 +1,9 @@
 import asyncio
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
 
-from pycallgraph import PyCallGraph
-from pycallgraph.output import GraphvizOutput
-
-from user_manager import UserManager
 from chat_manager import ChatManager
+from user_manager import UserManager
 
 
 class ChatServer:
@@ -18,8 +14,8 @@ class ChatServer:
         self.user_manager = UserManager()
         self.chat_manager = ChatManager()
         self.incoming_avatars = {}
-        # self.executor = ThreadPoolExecutor(max_workers=4)
 
+    # 处理客户端请求
     async def handle_client(self, reader, writer):
         while True:
             await writer.drain()
@@ -27,8 +23,8 @@ class ChatServer:
 
             if not data:
                 print('script client disconnected')
-                writer.close()  # 关闭套接字
-                await writer.wait_closed()  # 等待套接字完全关闭
+                writer.close()
+                await writer.wait_closed()
                 return
 
             message = data.decode('utf-8')
@@ -42,7 +38,7 @@ class ChatServer:
                 await writer.drain()
             logging.info(f"Send: {response}")
 
-    # async def process_message(self, message, writer, reader):
+    # 处理客户端消息
     async def process_message(self, message, writer, reader):
         try:
             message_data = json.loads(message)
@@ -143,19 +139,9 @@ class ChatServer:
 
     def start(self):
         asyncio.run(self.run_server())
-        # self.loop.run_until_complete(self.run_server())
-        
 
-# def main():
-#     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-#     chat_server = ChatServer()
-#     chat_server.start()
 
 if __name__ == '__main__':
-    # graphviz = GraphvizOutput()
-    # graphviz.output_file = "D:\\JetBrains\\MasaHiroSaber\\PyCharmProjects\\Simple-Chat\\server.png"
-    # with PyCallGraph(output=graphviz):
-    #     main()
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     chat_server = ChatServer()
     chat_server.start()

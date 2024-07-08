@@ -19,6 +19,7 @@ from qfluentwidgets import FluentIcon as FIF
 
 
 class Friend(QWidget):
+    """好友卡片类，用于显示好友信息"""
     def __init__(self, widget_username: QWidget, widget_avatar: QWidget, stretch=0, parent=None):
         super().__init__(parent=parent)
         self.parent = parent
@@ -39,6 +40,7 @@ class Friend(QWidget):
         self.__initWidget()
 
     def __initWidget(self):
+        """初始化组件"""
         self.chatLcon.setFixedSize(16, 16)
         self.__initLayout()
 
@@ -49,6 +51,7 @@ class Friend(QWidget):
         self.sourceWidget.setObjectName('sourceWidget')
 
     def __initLayout(self):
+        """初始化布局"""
         self.vBoxLayout.setSizeConstraint(QVBoxLayout.SetMinimumSize)
         self.cardLayout.setSizeConstraint(QVBoxLayout.SetMinimumSize)
         self.topLayout.setSizeConstraint(QHBoxLayout.SetMinimumSize)
@@ -295,16 +298,6 @@ class FriendInterface(ScrollArea):
         self.on_get_friend_details.emit()
         self.on_get_user_friends.emit()
 
-        # tasks = [task1, task2]
-        # 
-        # asyncio.run_coroutine_threadsafe(tasks, self.client.loop)
-        # task = []
-        # for friend in self.friends:
-        #     friendUsername = friend[0]
-        #     print(f"Processing friend: {friendUsername}")
-        #     # task.append(asyncio.create_task(self.get_user_details(friendUsername)))
-        #     response = await self.client.user_handler.get_user_details(friendUsername)
-
     # 获取当前用户的好友
     async def getUserFriends(self, username):
         response = await self.client.user_handler.get_user_friends(username)
@@ -364,7 +357,6 @@ class FriendInterface(ScrollArea):
             self.userDetails.show()
 
             self.userDetails.on_add_friend.connect(self.onSendFriendRequest)
-            # userDetails.on_send_message.connect(self.onSendMessage)
         else:
             info_bar(InfoBar.error, self, '错误', '该用户不存在')
 
@@ -376,10 +368,6 @@ class FriendInterface(ScrollArea):
         friendRequestWindow.on_reject_request.connect(self.respondRequest)
         friendRequestWindow.on_accept_request.connect(self.respondRequest)
         friendRequestWindow.on_window_close.connect(self.friendRequestsWindowClose)
-        # self.refreshButton.clicked()
-
-    # async def asyncRespondRequest(self, request_id, response):
-    #     await asyncio.gather(self.asyncTask(), self.respondFriendRequest(request_id, response))
 
     @pyqtSlot(list)
     def updateUsers(self, users):
